@@ -1,9 +1,12 @@
 import jinja2
 import os
+import model
+from model import GameState, RoleAssignment, Room
+import random
+import uuid
 import webapp2
 
 from google.appengine.api import users
-from google.appengine.ext import ndb
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 
@@ -12,20 +15,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True
 )
-
-
-class Room(ndb.Model):
-    room_name = ndb.StringProperty(required=True)
-    users = ndb.UserProperty(repeated=True)
-
-    @classmethod
-    def query_room(cls, room_name):
-        rooms = cls.query(ancestor=room_key(room_name)).fetch(1)
-        return rooms[0] if rooms else None
-
-
-def room_key(room_name):
-    return ndb.Key('room', room_name)
 
 
 class RoomPage(webapp2.RequestHandler):
@@ -40,9 +29,9 @@ class RoomPage(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('room.html')
         self.response.write(template.render({'room_name': room_name}))
 
-        room = Room.query_room(room_name)
+        room = Room.Query(room_name)
         if not room:
-            room = Room(parent=room_key(room_name))
+            room = Room(parent=Room.GetKey(room_name))
             room.room_name = room_name
         room.users.append(user)
         room.put()
@@ -51,11 +40,26 @@ class RoomPage(webapp2.RequestHandler):
 class RoomStatusPage(webapp2.RequestHandler):
     
     def get(self, room_name):
-        room = Room.query_room(room_name)
-        if room and len(room.users) > 2:
-            self.response.out.write('Ready!')
+        room = Room.Query(room_name)
+        if self._IsReady(room):
+            if room.game_state is None:
+                room.game_state = self._CreateNewGameState(room)
+                room.put()
+            self.response.out.write('READY - %s' % room.game_state)
         else:
-            self.response.out.write('Not ready')
+            self.response.out.write('NOT_READY - %s' % room.users)
+
+    def _IsReady(self, room):
+        return room and len(room.users) >= 2
+
+    def _CreateNewGameState(self, room):
+        game_state = GameState(parent=GameState.GetKey(uuid.uuid4().hex))
+        for user in room.users:
+            assignment = RoleAssignment(parent=RoleAssignment.GetKey(uuid.uuid4().hex))
+            assignment.user = user
+            assignment.role = random.choice(model.ROLES)
+            game_state.assignments.append(assignment)
+        return game_state
 
 
 application = webapp2.WSGIApplication([
@@ -65,6 +69,7 @@ application = webapp2.WSGIApplication([
     debug=True)
 
 
+# TODO remove this?
 def main():
     run_wsgi_app(application)
 
