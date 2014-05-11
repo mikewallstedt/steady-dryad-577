@@ -7,13 +7,13 @@ HTML = """
 <html>
   <body>
     <form method="get" id="room_selector" >
-      Room: <input type="text" id="room_id"/>
-      <input type="submit" id="room_submit" value="Join" onclick="gotoYourRoom()"/>
+      Room: <input type="text" id="room_id">
+      <input type="submit" id="room_submit" value="Join">
     </form>
 
-    <script type="text/javascript">
-      function gotoYourRoom() {
-        document.forms[0].action=document.getElementById('room_id').value;
+    <script>
+      document.getElementById('room_submit').onclick = function() {
+        document.forms[0].action = document.getElementById('room_id').value;
       }
     </script>
   </body>
