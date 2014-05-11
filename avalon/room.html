@@ -8,21 +8,24 @@
   <body>
     <div id="room_name" room_name={{ room_name }}> </div>
     <textarea id="status_label" cols="120" rows="20"> </textarea>
-    <script type="text/javascript">
+    <script>
       
-      function waitForReady() {
-        room_name = document.getElementById('room_name').getAttribute('room_name')
-        document.getElementById('status_label').value = room_name + ' is ' + checkReady(room_name);
-      }
-
-      function checkReady(room_name) {
-        xmlHttp = new XMLHttpRequest();
-        xmlHttp.open("GET", "ready/" + room_name, false);
-        xmlHttp.send(null);
-        return xmlHttp.responseText;
-      }
+      (function() {
+	      function waitForReady() {
+	        room_name = document.getElementById('room_name').getAttribute('room_name')
+	        document.getElementById('status_label').value = room_name + ' is ' + checkReady(room_name);
+	      }
+	
+	      function checkReady(room_name) {
+	        xmlHttp = new XMLHttpRequest();
+	        xmlHttp.open("GET", "ready/" + room_name, false);
+	        xmlHttp.send(null);
+	        return xmlHttp.responseText;
+	      }
+	      
+	      window.setInterval(function(){waitForReady()},1000);
+      }());
       
-      window.setInterval(function(){waitForReady()},1000);
     </script>  
   </body>
 </html> 
