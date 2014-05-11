@@ -12,12 +12,12 @@
       
       (function() {
 	      function waitForReady() {
-	        room_name = document.getElementById('room_name').getAttribute('room_name')
+	        var room_name = document.getElementById('room_name').getAttribute('room_name');
 	        document.getElementById('status_label').value = room_name + ' is ' + checkReady(room_name);
 	      }
 	
 	      function checkReady(room_name) {
-	        xmlHttp = new XMLHttpRequest();
+	        var xmlHttp = new XMLHttpRequest();
 	        xmlHttp.open("GET", "ready/" + room_name, false);
 	        xmlHttp.send(null);
 	        return xmlHttp.responseText;
