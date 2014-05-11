@@ -1,6 +1,7 @@
-application: whatevs
+application: avalon
 version: 1
-runtime: python
+runtime: python27
+threadsafe: false
 api_version: 1
 
 handlers:
@@ -8,3 +9,9 @@ handlers:
   script: room_selector.py
 - url: /.*
   script: room.py
+
+libraries:
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest

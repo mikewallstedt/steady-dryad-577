@@ -1,13 +1,10 @@
-from google.appengine.ext import webapp
+import webapp2
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 
 HTML = """
 <!doctype html>
 <html>
-  <head>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-  </head>  
   <body>
     <form method="get" id="room_selector" >
       Room: <input type="text" id="room_id"/>
@@ -23,7 +20,7 @@ HTML = """
 </html>
 """
 
-class MainPage(webapp.RequestHandler):
+class MainPage(webapp2.RequestHandler):
     
         
     def get(self):
@@ -31,7 +28,7 @@ class MainPage(webapp.RequestHandler):
         self.response.write(HTML)
 
 
-application = webapp.WSGIApplication([('/', MainPage)], debug=True)
+application = webapp2.WSGIApplication([('/', MainPage)], debug=True)
 
 
 def main():
