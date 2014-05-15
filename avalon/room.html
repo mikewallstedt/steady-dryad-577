@@ -4,29 +4,27 @@
 <html>
   <head>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script>
+    $(document).ready(function(){
+    	function queryRoomReady(){
+    		var room_name = $('#room_name').attr('room_name');
+    		$.get('/ready/' + room_name, function(data, status) {
+    			json_data = $.parseJSON(data);
+    			if (json_data['ready']) {
+    				$('#status_label').text('Room Ready');
+    			} else {
+    				setTimeout(queryRoomReady, 1000);
+    			}
+    		});
+    	}
+    	queryRoomReady();
+    });
+    </script>
   </head>
   <body>
     <div id="room_name" room_name={{ room_name }}> </div>
-    <textarea id="status_label" cols="120" rows="20"> </textarea>
-    <script>
-      
-      (function() {
-	      function waitForReady() {
-	        var room_name = document.getElementById('room_name').getAttribute('room_name');
-	        document.getElementById('status_label').value = room_name + ' is ' + checkReady(room_name);
-	      }
-	
-	      function checkReady(room_name) {
-	        var xmlHttp = new XMLHttpRequest();
-	        xmlHttp.open("GET", "ready/" + room_name, false);
-	        xmlHttp.send(null);
-	        return xmlHttp.responseText;
-	      }
-	      
-	      window.setInterval(function(){waitForReady()},1000);
-      }());
-      
-    </script>  
+    <h1 id="status_label">Room Not Ready</h1>
+    <h1 id="identity">Identity Unknown</h1>
   </body>
 </html> 
 {% endautoescape %}

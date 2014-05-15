@@ -1,4 +1,5 @@
 import jinja2
+import json
 import os
 import model
 from model import GameState, RoleAssignment, Room
@@ -19,7 +20,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 class RoomPage(webapp2.RequestHandler):
     
-        
     def get(self, room_name):
         user = users.get_current_user();
         if not user:
@@ -41,13 +41,13 @@ class RoomStatusPage(webapp2.RequestHandler):
     
     def get(self, room_name):
         room = Room.Query(room_name)
+        json_data = {'ready': False}
         if self._IsReady(room):
             if room.game_state is None:
                 room.game_state = self._CreateNewGameState(room)
                 room.put()
-            self.response.out.write('READY - %s' % room.game_state)
-        else:
-            self.response.out.write('NOT_READY - %s' % room.users)
+            json_data['ready'] = True
+        self.response.write(json.dumps(json_data))
 
     def _IsReady(self, room):
         return room and len(room.users) >= 2
