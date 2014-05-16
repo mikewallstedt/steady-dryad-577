@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Avalon: Create Game in Room {{ room_name }}</title>
+</head>
+<body>
+
+<form method="post" action="/{{ room_name }}/create_game">
+Number of Players: <input type="text" name="players_count">
+<input type="submit" name="Create">
+</form>
+
+</body>
+</html>

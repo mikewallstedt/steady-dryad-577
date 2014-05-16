@@ -5,33 +5,55 @@
   <head>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script>
-    $(document).ready(function(){
-    	function queryRoomReady(){
+    $(document).ready(function() {
+    	function queryRoomStatus() {
     		var room_name = $('#room_name').attr('room_name');
-    		$.get('/ready/' + room_name, function(data, status) {
-    			json_data = $.parseJSON(data);
-    			if (json_data['number_of_users']) {
-					$('#number_of_users').text('Number of Users is: ' + json_data['number_of_users'])
-				}
-    			if (json_data['ready']) {
-    				$('#status_label').text('Room Ready');
-    				if (json_data['role']) {
-    					$('#identity').text('Your Identity is: ' + json_data['role'])
-    				}
+    		$.get('/state/' + room_name, function(data, status) {
+    			if (data === 'NO_GAME') {
+    				$('#create_form').css('display', 'inline');
+    				$('#join_form').css('display', 'none');
+    				$('#status_label').text('No Game Present');
+    			} else if (data === 'WAITING_FOR_PLAYERS') {
+    				$('#create_form').css('visiblity', 'none');
+    				$('#join_form').css('display', 'inline');
+    				$('#status_label').text('Waiting for Players');
     			} else {
-    				setTimeout(queryRoomReady, 1000);
+    				$('#create_form').css('display', 'none');
+    				$('#join_form').css('display', 'none');
+    				if (data == 'GAME_BEING_CREATED') {
+    					$('#status_label').text('Game Creation in Progress. Please Wait.');
+    				}
+    				if (data == 'In Progress') {
+    					$('#status_label').text('Game in Progress. Not Accepting New Players.');
+    				}
     			}
+    			setTimeout(queryRoomStatus, 10000);
     		});
     	}
-    	queryRoomReady();
+    	queryRoomStatus();
     });
     </script>
+    <style>
+    #create_form {
+    	display: none;
+    }
+    #join_form {
+    	display: none;
+    }
+    </style>
+    <title>Avalon Room: {{ room_name }}</title>
   </head>
   <body>
-    <div id="room_name" room_name={{ room_name }}> </div>
-    <h1 id="status_label">Room Not Ready</h1>
-    <h1 id="number_of_users"></h1>
-    <h1 id="identity">Identity Unknown</h1>
+  	<h1>Room: {{ room_name }}</h1>
+  	<!-- Just a dummy div so the JavaScript can get the room_name. -->
+    <div id="room_name" room_name="{{ room_name }}"> </div>
+    <h1 id="status_label"></h1>
+    <form id="create_form" method="get" action="/{{ room_name }}/create_game">
+    	<input type="submit" value="Create New Game">
+    </form>
+    <form id="join_form" method="get" action="/{{ room_name }}/game">
+    	<input type="submit" value="Join Game">
+    </form>
   </body>
 </html> 
 {% endautoescape %}

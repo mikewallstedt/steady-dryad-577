@@ -1,8 +1,9 @@
 import random
-import uuid
 from google.appengine.ext import ndb
 
 ROLES = ['Minion', 'Merlin', 'Loyal', 'Mordred', 'Morgana', 'Oberon', 'Percival']
+
+ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'WAITING_FOR_PLAYERS', 'IN_PROGRESS']
 
 
 class RoleAssignment(ndb.Model):
@@ -10,51 +11,48 @@ class RoleAssignment(ndb.Model):
     role = ndb.StringProperty(choices=ROLES, required=True)
 
 
-class GameState(ndb.Model):
-    game_id = ndb.StringProperty(required=True)
+class Game(ndb.Model):
+    player_count = ndb.IntegerProperty(required=True)
+    available_roles = ndb.StringProperty(choices=ROLES, repeated=True)
     assignments = ndb.StructuredProperty(RoleAssignment, repeated=True)
+    players = ndb.UserProperty(repeated=True)
+    owner = ndb.UserProperty(required=True)
 
 
 class Room(ndb.Model):
-    name = ndb.StringProperty(required=True)
-    users = ndb.UserProperty(repeated=True)
-    game_state = ndb.StructuredProperty(GameState)
+    state = ndb.StringProperty(choices=ROOM_STATES, required=True)
+    game = ndb.StructuredProperty(Game)
 
 
+@ndb.transactional
 def getRoom(room_name):
-    return ndb.Key(Room, room_name).get()
-
-@ndb.transactional
-def addUserToRoom(room_name, user):
-    added = False
-    room = getRoom(room_name)
+    room = ndb.Key(Room, room_name).get()
     if not room:
-        room = Room(name=room_name, id=room_name)
-    if user not in room.users:
-        room.users.append(user)
-        added = True
-    room.put()
-    return added
+        room = Room(id=room_name, state='NO_GAME')
+    return room
+
 
 @ndb.transactional
-def getGameInfo(room_name):
-    retval = {'ready': 'False'}
+def addPlayerToGame(room_name, user):
+    room = ndb.Key(Room, room_name).get()
+    if not room or not room.game:
+        return False
+    game = getRoom(room_name).game
+    already_present = False
+    for assignment in game.assignments:
+        if assignment.user == user:
+            already_present = False
+            break
+    if already_present:
+        return False
+    role = random.choice(game.available_roles)
+    game.assignments.append(RoleAssignment(user=user, role=role))
+    game.available_roles.remove(role)
+    room.put()
+    return True
+
+
+@ndb.transactional
+def getRoomStatus(room_name):
     room = getRoom(room_name)
-    if room and len(room.users) >= 2:
-        retval['ready'] = True
-        if not room.game_state:
-            game_state = GameState(game_id=uuid.uuid4().hex)
-            available_roles = ROLES[:]
-            for user in room.users:
-                role = random.choice(available_roles)
-                available_roles.remove(role)
-                assignment = RoleAssignment()
-                assignment.user = user
-                assignment.role = role
-                game_state.assignments.append(assignment)
-            room.game_state = game_state
-            room.put()
-        retval['assignments'] = room.game_state.assignments
-    if room:
-        retval['number_of_users'] = len(room.users)
-    return retval
+    return room.status
