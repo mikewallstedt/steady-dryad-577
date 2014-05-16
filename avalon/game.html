@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Avalon: {{room_name}} Game</title>
+<!-- TODO: Need a script to watch the state of the game and update user's view. -->
+</head>
+<body>
+<h1>You are in the game and your role is {{role}}</h1>
+<form method="post" action="/{{ room_name }}/destroy_game">
+<input type="submit" value="Destroy Game">
+</form>
+</body>
+</html>

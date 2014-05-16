@@ -3,7 +3,9 @@ from google.appengine.ext import ndb
 
 ROLES = ['Minion', 'Merlin', 'Loyal', 'Mordred', 'Morgana', 'Oberon', 'Percival']
 
-ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'WAITING_FOR_PLAYERS', 'IN_PROGRESS']
+ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'WAITING_FOR_PLAYERS', 'GAME_IN_PROGRESS']
+
+DEFAULT_PLAYER_COUNT = 5
 
 
 class RoleAssignment(ndb.Model):
@@ -53,6 +55,24 @@ def addPlayerToGame(room_name, user):
 
 
 @ndb.transactional
-def getRoomStatus(room_name):
-    room = getRoom(room_name)
-    return room.status
+def beginGameCreation(room_name, user):
+    room = ndb.Key(Room, room_name).get()
+    if not room:
+        room = Room(id=room_name, state='NO_GAME')
+    if room.state == 'NO_GAME':
+        room.state = 'GAME_BEING_CREATED'
+        room.game = Game(owner=user, player_count=DEFAULT_PLAYER_COUNT)
+        room.put()
+        return True
+    return False
+
+
+@ndb.transactional
+def destroyGame(room_name, user):
+    room = ndb.Key(Room, room_name).get()
+    if room and room.game and room.game.assignments:
+        for assignment in room.game.assignments:
+            if assignment.user == user:
+                room.game = None
+                room.state = 'NO_GAME'
+                room.put()
