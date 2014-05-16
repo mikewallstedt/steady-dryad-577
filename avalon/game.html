@@ -3,11 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <title>Avalon: {{room_name}} Game</title>
-<!-- TODO: Need a script to watch the state of the game and update user's view. -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+	function queryGameStatus() {
+		var room_name = $('#room_name').attr('room_name');
+ 		$.get('/' + room_name + '/game_state', function(data, status) {
+			var info = $.parseJSON(data);
+			$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
+			assignments = $('#assignments');
+ 			assignments.empty();
+ 			console.log(info.known_identities);
+			$.each(info.known_identities, function(index, value) {
+				var contents = '<tr><td>' + index + '</td><td>' + value + '</td></tr>';
+				console.log(contents);
+ 				assignments.append($(contents))
+ 			});
+ 			if (info.current_number_of_players < info.total_number_of_players) {
+ 				setTimeout(queryGameStatus, 10000);
+ 			}
+ 		});	
+	}
+	queryGameStatus();
+});
+</script>
 </head>
 <body>
+<!-- Just a dummy div so the JavaScript can get the room_name. -->
+<div id="room_name" room_name="{{ room_name }}"> </div>
+
 <h1>You are in the game and your role is {{role}}</h1>
-<form method="post" action="/{{ room_name }}/destroy_game">
+<h1 id="player_count"></h1>
+<table>
+<thead>
+<tr>
+<th>Player</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody id="assignments">
+</tbody>
+</table>
+<form method="post" action="/{{ room_name }}/destroy_game" onsubmit="return confirm('Are you sure you want to destroy the game?')">
 <input type="submit" value="Destroy Game">
 </form>
 </body>

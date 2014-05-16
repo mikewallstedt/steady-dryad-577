@@ -1,4 +1,5 @@
 import jinja2
+import json
 import os
 import model
 import webapp2
@@ -101,6 +102,30 @@ class GamePage(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('game.html')
         self.response.write(template.render({'room_name': room_name, 'role': role}))
     
+    
+class GameStatusPage(webapp2.RequestHandler):
+    
+    def get(self, room_name):
+        user = users.get_current_user()
+        room = model.getRoom(room_name)
+        info = {'known_identities': {}}
+        if room.game and room.game.assignments:
+            role = "Unassigned"
+            for assignment in room.game.assignments:
+                if assignment.user == user:
+                    role = assignment.role
+            info['current_number_of_players'] = len(room.game.assignments)
+            info['total_number_of_players'] = room.game.player_count
+            if role == "Merlin":
+                evil_roles = model.EVIL_SPECIAL_ROLES + ['Minion']
+                for assignment in room.game.assignments:
+                    nickname = assignment.user.nickname()
+                    if assignment.role in evil_roles:
+                        info['known_identities'][nickname] = 'evil'
+                    else:
+                        info['known_identities'][nickname] = 'good'
+        return self.response.write(json.dumps(info))
+    
 
 class GameDestroyPage(webapp2.RequestHandler):
     
@@ -115,7 +140,8 @@ application = webapp2.WSGIApplication([
     (r'/state/(\w+)', RoomStatusPage),
     (r'/(\w+)/create_game', GameCreatePage),
     (r'/(\w+)/destroy_game', GameDestroyPage),
-    (r'/(\w+)/game', GamePage)
+    (r'/(\w+)/game', GamePage),
+    (r'/(\w+)/game_state', GameStatusPage)
     ],
     debug=True)
 

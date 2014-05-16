@@ -46,9 +46,11 @@ def addPlayerToGame(room_name, user):
     already_present = False
     for assignment in game.assignments:
         if assignment.user == user:
-            already_present = False
+            already_present = True
             break
     if already_present:
+        return True
+    if not game.available_roles:
         return False
     role = random.choice(game.available_roles)
     game.assignments.append(RoleAssignment(user=user, role=role))
