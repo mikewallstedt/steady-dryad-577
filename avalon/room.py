@@ -5,6 +5,7 @@ import webapp2
 
 from google.appengine.api import users
 from google.appengine.ext.webapp.util import run_wsgi_app
+from model import DEFAULT_PLAYER_COUNT
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -55,9 +56,27 @@ class GameCreatePage(webapp2.RequestHandler):
             return self.redirect('/' + room_name)
         player_count = self.request.get('player_count')
         if player_count:
-            room.game.player_count = int(player_count)
-        # TODO Set available roles based on form input.
-        available_roles = model.ROLES
+            player_count = int(player_count)
+        else:
+            player_count = DEFAULT_PLAYER_COUNT
+        room.game.player_count = player_count
+        good_player_count = 0
+        evil_player_count = 0
+        available_roles = []
+        for role in model.SPECIAL_ROLES:
+            if self.request.get(role.lower()):
+                available_roles.append(role)
+                if role in model.GOOD_SPECIAL_ROLES:
+                    good_player_count += 1
+                else:
+                    evil_player_count += 1
+        desired_evil_player_count = (player_count + 1) / 3
+        while evil_player_count < desired_evil_player_count and evil_player_count + good_player_count < player_count:
+            available_roles.append('Minion')
+            evil_player_count += 1
+        while evil_player_count + good_player_count < player_count:
+            available_roles.append('Loyal')
+            good_player_count += 1
         room.game.available_roles = available_roles
         room.state = 'WAITING_FOR_PLAYERS'
         room.put()

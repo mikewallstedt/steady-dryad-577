@@ -1,7 +1,10 @@
 import random
 from google.appengine.ext import ndb
 
-ROLES = ['Minion', 'Merlin', 'Loyal', 'Mordred', 'Morgana', 'Oberon', 'Percival']
+GOOD_SPECIAL_ROLES = ['Merlin', 'Percival']
+EVIL_SPECIAL_ROLES = ['Mordred', 'Morgana', 'Oberon']
+SPECIAL_ROLES = [role for group in (GOOD_SPECIAL_ROLES, EVIL_SPECIAL_ROLES) for role in group]
+ROLES = [role for group in (['Minion', 'Loyal'], SPECIAL_ROLES) for role in group]
 
 ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'WAITING_FOR_PLAYERS', 'GAME_IN_PROGRESS']
 
@@ -64,7 +67,10 @@ def beginGameCreation(room_name, user):
         room.game = Game(owner=user, player_count=DEFAULT_PLAYER_COUNT)
         room.put()
         return True
-    return False
+    elif room.state == 'GAME_BEING_CREATED' and room.game.owner == user:
+        return True
+    else:
+        return False
 
 
 @ndb.transactional
