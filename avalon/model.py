@@ -19,6 +19,7 @@ class RoleAssignment(ndb.Model):
 class Game(ndb.Model):
     player_count = ndb.IntegerProperty(required=True)
     available_roles = ndb.StringProperty(choices=ROLES, repeated=True)
+    all_roles = ndb.StringProperty(choices=ROLES, repeated=True)
     assignments = ndb.StructuredProperty(RoleAssignment, repeated=True)
     players = ndb.UserProperty(repeated=True)
     owner = ndb.UserProperty(required=True)

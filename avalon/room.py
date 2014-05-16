@@ -79,6 +79,7 @@ class GameCreatePage(webapp2.RequestHandler):
             available_roles.append('Loyal')
             good_player_count += 1
         room.game.available_roles = available_roles
+        room.game.all_roles = available_roles[:]
         room.state = 'WAITING_FOR_PLAYERS'
         room.put()
         return self.redirect('/' + room_name)
@@ -91,6 +92,8 @@ class GamePage(webapp2.RequestHandler):
         user = users.get_current_user()
         added = model.addPlayerToGame(room_name, user)
         room = model.getRoom(room_name)
+        if not room.game:
+            return self.redirect('/' + room_name)
         assignments = room.game.assignments
         role = 'Unknown'
         for assignment in assignments:
@@ -110,20 +113,51 @@ class GameStatusPage(webapp2.RequestHandler):
         room = model.getRoom(room_name)
         info = {'known_identities': {}}
         if room.game and room.game.assignments:
+            if room.game.all_roles:
+                info['all_roles'] = room.game.all_roles
             role = "Unassigned"
             for assignment in room.game.assignments:
                 if assignment.user == user:
                     role = assignment.role
             info['current_number_of_players'] = len(room.game.assignments)
             info['total_number_of_players'] = room.game.player_count
-            if role == "Merlin":
-                evil_roles = model.EVIL_SPECIAL_ROLES + ['Minion']
+            evil_roles = model.EVIL_SPECIAL_ROLES + ['Minion']
+            if role == 'Merlin':
                 for assignment in room.game.assignments:
                     nickname = assignment.user.nickname()
-                    if assignment.role in evil_roles:
+                    if assignment.user == user:
+                        info['known_identities'][nickname] = 'me'
+                    elif assignment.role in evil_roles and assignment.role != 'Mordred':
                         info['known_identities'][nickname] = 'evil'
                     else:
-                        info['known_identities'][nickname] = 'good'
+                        info['known_identities'][nickname] = 'unknown'
+            elif role == 'Percival':
+                for assignment in room.game.assignments:
+                    nickname = assignment.user.nickname()
+                    if assignment.user == user:
+                        info['known_identities'][nickname] = 'me'
+                    elif assignment.role == 'Merlin' or assignment.role == 'Morgana':
+                        info['known_identities'][assignment.user.nickname()] = 'Merlin'
+                        if 'Morgana' in room.game.all_roles:
+                            info['known_identities'][assignment.user.nickname()] = "Merlin (or Morgana)"
+                    else:
+                        info['known_identities'][nickname] = 'unknown'
+            elif role in evil_roles and role != 'Oberon':
+                for assignment in room.game.assignments:
+                    nickname = assignment.user.nickname()
+                    if assignment.user == user:
+                        info['known_identities'][nickname] = 'me'
+                    elif assignment.role in evil_roles and assignment.role != 'Oberon':
+                        info['known_identities'][assignment.user.nickname()] = 'evil'
+                    else:
+                        info['known_identities'][nickname] = 'unknown'
+            else:
+                for assignment in room.game.assignments:
+                    nickname = assignment.user.nickname()
+                    if assignment.user == user:
+                        info['known_identities'][nickname] = 'me'
+                    else:
+                        info['known_identities'][nickname] = 'unknown'
         return self.response.write(json.dumps(info))
     
 

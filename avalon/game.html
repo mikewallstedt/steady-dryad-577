@@ -13,12 +13,15 @@ $(document).ready(function() {
 			$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
 			assignments = $('#assignments');
  			assignments.empty();
- 			console.log(info.known_identities);
 			$.each(info.known_identities, function(index, value) {
 				var contents = '<tr><td>' + index + '</td><td>' + value + '</td></tr>';
-				console.log(contents);
  				assignments.append($(contents))
  			});
+			$('#roles_in_play').empty();
+			$.each(info.all_roles, function(index, value) {
+				var contents = '<li>' + value + '</li>';
+				$('#roles_in_play').append($(contents));
+			});
  			if (info.current_number_of_players < info.total_number_of_players) {
  				setTimeout(queryGameStatus, 10000);
  			}
@@ -34,6 +37,11 @@ $(document).ready(function() {
 
 <h1>You are in the game and your role is {{role}}</h1>
 <h1 id="player_count"></h1>
+
+<h2>Roles in Play</h2>
+<ul id="roles_in_play">
+</ul>
+
 <table>
 <thead>
 <tr>
