@@ -64,7 +64,7 @@ def addPlayerToGame(room_name, user):
     if not game.available_roles:
         # All roles are filled. Start the game.
         # Create a random leadership order.
-        random.shuffle(game.available_roles)
+        random.shuffle(game.assignments)
         game.leader_index = 0
         game.round_number = 1
         game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
