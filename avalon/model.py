@@ -12,10 +12,22 @@ ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGR
 
 DEFAULT_PLAYER_COUNT = 5
 
+MISSION_PARAMETERS = {5: [[2, 1], [3, 1], [2, 1], [3, 1], [3, 1]],
+              6: [[2, 1], [3, 1], [4, 1], [3, 1], [4, 1]],
+              7: [[2, 1], [3, 1], [3, 1], [4, 2], [4, 1]],
+              8: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]],
+              9: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]],
+              10: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]]}
+
 
 class RoleAssignment(ndb.Model):
     user = ndb.UserProperty(required=True)
     role = ndb.StringProperty(choices=ROLES, required=True)
+
+
+class Vote(ndb.Model):
+    user = ndb.UserProperty(required=True)
+    role = ndb.BooleanProperty(required=True)
 
 
 class Game(ndb.Model):
@@ -28,6 +40,12 @@ class Game(ndb.Model):
     round_number = ndb.IntegerProperty()
     round_state = ndb.StringProperty(choices=ROUND_STATES)
     round_failed_leader_count = ndb.IntegerProperty()
+    team_proposal = ndb.StringProperty(repeated=True)
+    team_proposal_votes = ndb.StructuredProperty(Vote, repeated=True)
+    team = ndb.UserProperty(repeated=True)
+    mission_votes = ndb.StructuredProperty(Vote, repeated=True)
+    number_of_fail_votes = ndb.IntegerProperty(repeated=True)
+    number_of_missions_failed = ndb.IntegerProperty()
 
 
 class Room(ndb.Model):
@@ -66,7 +84,7 @@ def addPlayerToGame(room_name, user):
         # Create a random leadership order.
         random.shuffle(game.assignments)
         game.leader_index = 0
-        game.round_number = 1
+        game.round_number = 0
         game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
         game.round_failed_leader_count = 0
     room.put()

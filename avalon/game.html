@@ -1,59 +1,90 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>Avalon: {{room_name}} Game</title>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script>
-$(document).ready(function() {
-	function queryGameStatus() {
-		var room_name = $('#room_name').attr('room_name');
- 		$.get('/' + room_name + '/game_state', function(data, status) {
-			var info = $.parseJSON(data);
-			$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
-			assignments = $('#assignments');
- 			assignments.empty();
-			$.each(info.identities, function(index, value) {
-				var contents = '<tr><td>' + value[0] + '</td><td>' + value[1] + '</td></tr>';
- 				assignments.append($(contents))
- 			});
-			$('#roles_in_play').empty();
-			$.each(info.all_roles, function(index, value) {
-				var contents = '<li>' + value + '</li>';
-				$('#roles_in_play').append($(contents));
+	<head>
+		<meta charset="UTF-8">
+		<title>Avalon: {{room_name}} Game</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script>
+			$(document).ready(function() {
+				function queryGameStatus() {
+					var room_name = $('#room_name').attr('room_name');
+			 		$.get('/' + room_name + '/game_state', function(data, status) {
+						var info = $.parseJSON(data);
+						$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
+						assignments = $('#assignments');
+			 			assignments.empty();
+						$.each(info.identities, function(index, value) {
+							var contents = '<tr><td>' + value[0] + '</td><td>' + value[1] + '</td></tr>';
+			 				assignments.append($(contents))
+			 			});
+						$('#roles_in_play').empty();
+						$.each(info.all_roles, function(index, value) {
+							var contents = '<li>' + value + '</li>';
+							$('#roles_in_play').append($(contents));
+						});
+			 			if (info.current_number_of_players < info.total_number_of_players) {
+			 				setTimeout(queryGameStatus, 1000);
+			 			}
+			 			
+			 			if (info.you_are_the_leader) {
+			 				$('#create_team_proposal_description').text('Select ' + info['team_size'][0] + ' team members');
+			 				$('#create_team_proposal_buttons').empty();
+			 				$.each(info.identities, function(index, value) {
+			 					var contents = '<li><input type="checkbox" id="' + value[0] + '" name="' + value[0] + '"> <label for="' + value[0] + '">' + value[0] + '</label></li>'
+			 					$('#create_team_proposal_buttons').append($(contents));
+			 				});
+			 				// TODO: Add onsubmit check to make sure the right number of checkboxes are checked.
+			 				var submit_button = $('<input type="submit" value="Submit Team Proposal">');
+			 				$('#create_team_proposal_buttons').append($('<li>').append(submit_button));
+			 				$('#create_team_proposal_form').submit(function() {
+			 					var number_of_boxes_checked = $('#create_team_proposal_form').find(':checkbox:checked').length;
+			 					if (number_of_boxes_checked != info['team_size'][0]) {
+			 						alert('Team should consist of ' + info['team_size'][0] + ' members. You chose ' + number_of_boxes_checked);
+			 						return false;
+			 					}
+			 					return true;
+			 				});
+			 			}
+			 		});	
+				}
+				queryGameStatus();
 			});
- 			if (info.current_number_of_players < info.total_number_of_players) {
- 				setTimeout(queryGameStatus, 10000);
- 			}
- 		});	
-	}
-	queryGameStatus();
-});
-</script>
-</head>
-<body>
-<!-- Just a dummy div so the JavaScript can get the room_name. -->
-<div id="room_name" room_name="{{ room_name }}"> </div>
-
-<h1>You are in the game and your role is {{role}}</h1>
-<h1 id="player_count"></h1>
-
-<h2>Roles in Play</h2>
-<ul id="roles_in_play">
-</ul>
-
-<table>
-<thead>
-<tr>
-<th>Player</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody id="assignments">
-</tbody>
-</table>
-<form method="post" action="/{{ room_name }}/destroy_game" onsubmit="return confirm('Are you sure you want to destroy the game?')">
-<input type="submit" value="Destroy Game">
-</form>
-</body>
+		</script>
+	</head>
+	
+	<body>
+		<!-- Just a dummy div so the JavaScript can get the room_name. -->
+		<div id="room_name" room_name="{{ room_name }}"> </div>
+		
+		<h1>You are in the game and your role is {{role}}</h1>
+		<h1 id="player_count"></h1>
+		
+		<h2>Roles in Play</h2>
+		<ul id="roles_in_play">
+		</ul>
+		
+		<table>
+			<thead>
+			<tr>
+			<th>Player</th>
+			<th>Role</th>
+			</tr>
+			</thead>
+			<tbody id="assignments">
+			</tbody>
+		</table>
+		
+		<div id="create_team_proposal">
+			<form method="post" action="/{{ room_name }}/submit_team_proposal" id="create_team_proposal_form">
+				<h2 id="create_team_proposal_description"></h2>
+				<ul id="create_team_proposal_buttons">
+					<!-- JavaScript will put names in here with check boxes. -->
+				</ul>
+			</form>
+		</div>
+		
+		<form method="post" action="/{{ room_name }}/destroy_game" onsubmit="return confirm('Are you sure you want to destroy the game?')">
+			<input type="submit" value="Destroy Game">
+		</form>
+	</body>
 </html>

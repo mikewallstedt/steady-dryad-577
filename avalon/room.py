@@ -71,7 +71,7 @@ class GameCreatePage(webapp2.RequestHandler):
                     good_player_count += 1
                 else:
                     evil_player_count += 1
-        desired_evil_player_count = (player_count + 1) / 3
+        desired_evil_player_count = (player_count + 2) / 3
         while evil_player_count < desired_evil_player_count and evil_player_count + good_player_count < player_count:
             available_roles.append('Minion')
             evil_player_count += 1
@@ -116,6 +116,39 @@ class GameStatusPage(webapp2.RequestHandler):
         if room.game and room.game.assignments:
             if room.game.all_roles:
                 info['all_roles'] = room.game.all_roles
+                info['mission_params'] = model.MISSION_PARAMETERS[len(room.game.all_roles)]
+            if room.game.round_state:
+                info['round_state'] = room.game.round_state
+                info['leader_index'] = room.game.leader_index
+                info['round_number'] = room.game.round_number
+                info['round_failed_leader_count'] = room.game.round_failed_leader_count
+                if room.game.round_state == 'WAITING_FOR_TEAM_PROPOSAL':
+                    if room.game.assignments[room.game.leader_index].user == user:
+                        info['you_are_the_leader'] = True
+                    info['team_size'] = model.MISSION_PARAMETERS[len(room.game.all_roles)][room.game.round_number]
+                elif room.game.round_state == 'VOTING_ON_TEAM':
+                    info['team_proposal'] = room.game.team_proposal
+                    already_voted = False
+                    for vote in room.game.team_proposal_votes:
+                        if vote.user == user:
+                            already_voted = True
+                            break
+                    if already_voted:
+                        info['vote_needed'] = False
+                    else:
+                        info['vote_needed'] = True
+                elif room.game.round_state == 'MISSION_IN_PROGRESS':
+                    if user in room.game.team:
+                        info['in_team'] = True
+                        already_voted = False
+                        for vote in room.game.mission_votes:
+                            if vote.user == user:
+                                already_voted = True
+                                break
+                        if already_voted:
+                            info['vote_needed'] = False
+                        else:
+                            info['voted_needed'] = True
             role = "Unassigned"
             for assignment in room.game.assignments:
                 if assignment.user == user:
@@ -162,6 +195,12 @@ class GameStatusPage(webapp2.RequestHandler):
                         info['identities'].append([nickname, 'unknown'])
         return self.response.write(json.dumps(info))
     
+    
+class SubmitTeamProposalPage(webapp2.RequestHandler):
+    
+    def post(self, room_name):
+        self.response.write('Not yet implemented')
+    
 
 class GameDestroyPage(webapp2.RequestHandler):
     
@@ -177,7 +216,8 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/create_game', GameCreatePage),
     (r'/(\w+)/destroy_game', GameDestroyPage),
     (r'/(\w+)/game', GamePage),
-    (r'/(\w+)/game_state', GameStatusPage)
+    (r'/(\w+)/game_state', GameStatusPage),
+    (r'/(\w+)/submit_team_proposal', SubmitTeamProposalPage)
     ],
     debug=True)
 
