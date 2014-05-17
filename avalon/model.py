@@ -8,6 +8,8 @@ ROLES = [role for group in (['Minion', 'Loyal'], SPECIAL_ROLES) for role in grou
 
 ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'WAITING_FOR_PLAYERS', 'GAME_IN_PROGRESS']
 
+ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGRESS']
+
 DEFAULT_PLAYER_COUNT = 5
 
 
@@ -21,8 +23,11 @@ class Game(ndb.Model):
     available_roles = ndb.StringProperty(choices=ROLES, repeated=True)
     all_roles = ndb.StringProperty(choices=ROLES, repeated=True)
     assignments = ndb.StructuredProperty(RoleAssignment, repeated=True)
-    players = ndb.UserProperty(repeated=True)
     owner = ndb.UserProperty(required=True)
+    leader_index = ndb.IntegerProperty()
+    round_number = ndb.IntegerProperty()
+    round_state = ndb.StringProperty(choices=ROUND_STATES)
+    round_failed_leader_count = ndb.IntegerProperty()
 
 
 class Room(ndb.Model):
@@ -56,6 +61,14 @@ def addPlayerToGame(room_name, user):
     role = random.choice(game.available_roles)
     game.assignments.append(RoleAssignment(user=user, role=role))
     game.available_roles.remove(role)
+    if not game.available_roles:
+        # All roles are filled. Start the game.
+        # Create a random leadership order.
+        random.shuffle(game.available_roles)
+        game.leader_index = 0
+        game.round_number = 1
+        game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
+        game.round_failed_leader_count = 0
     room.put()
     return True
 

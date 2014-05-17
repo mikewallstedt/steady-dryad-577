@@ -13,8 +13,8 @@ $(document).ready(function() {
 			$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
 			assignments = $('#assignments');
  			assignments.empty();
-			$.each(info.known_identities, function(index, value) {
-				var contents = '<tr><td>' + index + '</td><td>' + value + '</td></tr>';
+			$.each(info.identities, function(index, value) {
+				var contents = '<tr><td>' + value[0] + '</td><td>' + value[1] + '</td></tr>';
  				assignments.append($(contents))
  			});
 			$('#roles_in_play').empty();
