@@ -4,8 +4,40 @@
 <html>
   <head>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script type="text/javascript" src="/_ah/channel/jsapi"></script>
     <script>
     $(document).ready(function() {
+    	var channel;
+    	var socket;
+    	var room_name = "{{room_name}}";
+    
+    	function connectToChannel() {
+		    alert('Connect to chanel');
+		    channel = new goog.appengine.Channel('{{ token }}');
+		    socket = channel.open();
+		    
+		    socket.onopen = onOpened;
+		    socket.onmessage = onMessage;
+		    socket.onerror = onError;
+		    socket.onclose = onClose;    	
+    	}
+    	
+    	function onOpened() {
+			$.get('state/' + room_name);
+    	}
+    	
+    	function onMessage(msg) {
+    		alert("Msg: " + msg.data);
+    	}
+    	
+    	function onError() {
+    		alert("ERROR");
+    	}
+    	
+    	function onClose() {
+    		alert ("CLOSED");
+    	}
+    	
     	function queryRoomStatus() {
     		var room_name = $('#room_name').attr('room_name');
     		$.get('/state/' + room_name, function(data, status) {
@@ -31,7 +63,7 @@
     			setTimeout(queryRoomStatus, 10000);
     		});
     	}
-    	queryRoomStatus();
+    	connectToChannel();
     });
     </script>
     <style>

@@ -6,7 +6,7 @@ EVIL_SPECIAL_ROLES = ['Mordred', 'Morgana', 'Oberon']
 SPECIAL_ROLES = [role for group in (GOOD_SPECIAL_ROLES, EVIL_SPECIAL_ROLES) for role in group]
 ROLES = [role for group in (['Minion', 'Loyal'], SPECIAL_ROLES) for role in group]
 
-ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'WAITING_FOR_PLAYERS', 'GAME_IN_PROGRESS']
+ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'GAME_IN_PROGRESS']
 
 ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGRESS']
 
@@ -20,6 +20,12 @@ MISSION_PARAMETERS = {5: [[2, 1], [3, 1], [2, 1], [3, 1], [3, 1]],
               8: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]],
               9: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]],
               10: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]]}
+
+
+class RoomState(object):
+    pass
+    # TODO encapsulate one of ROOM_STATES plus a list of users waiting in the room.
+    # Send this as the responsge to GetRoomState
 
 
 class RoleAssignment(ndb.Model):

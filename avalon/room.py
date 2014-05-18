@@ -4,6 +4,7 @@ import os
 import model
 import webapp2
 
+from google.appengine.api import channel
 from google.appengine.api import users
 from google.appengine.ext.webapp.util import run_wsgi_app
 from model import DEFAULT_PLAYER_COUNT
@@ -23,21 +24,30 @@ class RoomPage(webapp2.RequestHandler):
         if not user:
             return self.redirect(users.create_login_url(self.request.uri))
         
-        room = model.getRoom(room_name)
-        if room.game and room.game.assignments:
-            for assignment in room.game.assignments:
-                if assignment.user == user:
-                    return self.redirect('/' + room_name + '/game')
+        token = channel.create_channel(user.user_id() + room_name)
+        template_values = {'token': token,
+                           'room_name': room_name}
+
+#         room = model.getRoom(room_name)
+#         if room.game and room.game.assignments:
+#             for assignment in room.game.assignments:
+#                 if assignment.user == user:
+#                     return self.redirect('/' + room_name + '/game')
 
         template = JINJA_ENVIRONMENT.get_template('room.html')
-        self.response.write(template.render({'room_name': room_name}))
+        self.response.write(template.render(template_values))
 
 
 class RoomStatusPage(webapp2.RequestHandler):
     
     def get(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+
         state = model.getRoom(room_name).state
-        self.response.write(state)
+        #self.response.write(state)
+        channel.send_message(user.user_id() + room_name, state)
 
 
 class GameCreatePage(webapp2.RequestHandler):
