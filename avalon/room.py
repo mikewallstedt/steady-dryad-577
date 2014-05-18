@@ -138,7 +138,7 @@ class GameStatusPage(webapp2.RequestHandler):
                     else:
                         info['vote_needed'] = True
                 elif room.game.round_state == 'MISSION_IN_PROGRESS':
-                    if user in room.game.team:
+                    if user.nickname() in room.game.team:
                         info['in_team'] = True
                         already_voted = False
                         for vote in room.game.mission_votes:
@@ -148,7 +148,7 @@ class GameStatusPage(webapp2.RequestHandler):
                         if already_voted:
                             info['vote_needed'] = False
                         else:
-                            info['voted_needed'] = True
+                            info['vote_needed'] = True
             role = "Unassigned"
             for assignment in room.game.assignments:
                 if assignment.user == user:
@@ -199,7 +199,65 @@ class GameStatusPage(webapp2.RequestHandler):
 class SubmitTeamProposalPage(webapp2.RequestHandler):
     
     def post(self, room_name):
-        self.response.write('Not yet implemented')
+        user = users.get_current_user()
+        room = model.getRoom(room_name)
+        if not user or not room or not room.game or room.game.assignments[room.game.leader_index].user != user:
+            return self.redirect('/' + room_name)
+        proposal = []
+        for item in self.request.params.items():
+            # TODO: Make sure these are valid user names. (URL encoded form)
+            if item[1] == 'on':
+                proposal.append(item[0])
+        room.game.team_proposal = proposal
+        room.game.round_state = 'VOTING_ON_TEAM'
+        room.put()
+        return self.redirect('/' + room_name + '/game')
+
+
+class VoteOnTeamProposal(webapp2.RequestHandler):
+
+    def post(self, room_name):
+        user = users.get_current_user()
+        room = model.getRoom(room_name)
+        if not user or not room or not room.game or room.game.round_state != 'VOTING_ON_TEAM' or user in [v.user for v in room.game.team_proposal_votes]:
+            return self.redirect('/' + room_name)
+        if not room.game.team_proposal_votes:
+            room.game.team_proposal_votes = []
+        vote = False
+        if self.request.get('team_proposal_vote') == 'yes':
+            vote = True
+        room.game.team_proposal_votes.append(model.Vote(user=user, vote=vote))
+        if len(room.game.team_proposal_votes) == room.game.player_count:
+            ayes = 0
+            nays = 0
+            for vote in room.game.team_proposal_votes:
+                if vote.vote:
+                    ayes += 1
+                else:
+                    nays += 1
+            room.game.team_proposal_votes = []
+            if ayes > nays:
+                room.game.round_state = 'MISSION_IN_PROGRESS'
+                room.game.round_failed_leader_count = 0
+                room.game.team = room.game.team_proposal
+            else:
+                room.game.leader_index += 1
+                room.game.leader_index %= room.game.player_count
+                room.game.round_failed_leader_count += 1
+                if room.game.round_failed_leader_count >= model.MAX_FAILED_LEADER_COUNT:
+                    room.game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
+                    room.game.number_of_missions_failed += 1
+                    room.game.round_number += 1
+                    room.game.round_failed_leader_count = 0
+        room.put()
+        return self.redirect('/' + room_name)
+
+
+class VoteOnMissionSuccess(webapp2.RequestHandler):
+    
+    def post(self, room_name):
+        # TODO: Tally the votes.
+        return self.redirect('/' + room_name)
     
 
 class GameDestroyPage(webapp2.RequestHandler):
@@ -217,7 +275,9 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/destroy_game', GameDestroyPage),
     (r'/(\w+)/game', GamePage),
     (r'/(\w+)/game_state', GameStatusPage),
-    (r'/(\w+)/submit_team_proposal', SubmitTeamProposalPage)
+    (r'/(\w+)/submit_team_proposal', SubmitTeamProposalPage),
+    (r'/(\w+)/vote_on_team_proposal', VoteOnTeamProposal),
+    (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess)
     ],
     debug=True)
 

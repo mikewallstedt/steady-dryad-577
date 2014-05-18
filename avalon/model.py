@@ -12,6 +12,8 @@ ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGR
 
 DEFAULT_PLAYER_COUNT = 5
 
+MAX_FAILED_LEADER_COUNT = 5
+
 MISSION_PARAMETERS = {5: [[2, 1], [3, 1], [2, 1], [3, 1], [3, 1]],
               6: [[2, 1], [3, 1], [4, 1], [3, 1], [4, 1]],
               7: [[2, 1], [3, 1], [3, 1], [4, 2], [4, 1]],
@@ -27,7 +29,7 @@ class RoleAssignment(ndb.Model):
 
 class Vote(ndb.Model):
     user = ndb.UserProperty(required=True)
-    role = ndb.BooleanProperty(required=True)
+    vote = ndb.BooleanProperty(required=True)
 
 
 class Game(ndb.Model):
@@ -42,9 +44,8 @@ class Game(ndb.Model):
     round_failed_leader_count = ndb.IntegerProperty()
     team_proposal = ndb.StringProperty(repeated=True)
     team_proposal_votes = ndb.StructuredProperty(Vote, repeated=True)
-    team = ndb.UserProperty(repeated=True)
+    team = ndb.StringProperty(repeated=True)
     mission_votes = ndb.StructuredProperty(Vote, repeated=True)
-    number_of_fail_votes = ndb.IntegerProperty(repeated=True)
     number_of_missions_failed = ndb.IntegerProperty()
 
 
@@ -87,6 +88,7 @@ def addPlayerToGame(room_name, user):
         game.round_number = 0
         game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
         game.round_failed_leader_count = 0
+        game.number_of_missions_failed = 0
     room.put()
     return True
 
