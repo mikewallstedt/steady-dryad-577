@@ -46,8 +46,17 @@
 		    		});
 		    	}
 		    	
+		    	function updateBasicInfo(info) {
+		    		$('#round').text('Round: ' + (info.round_number + 1));
+		    		$('#leader').text('Leader: ' + info.leader);
+		    		$('#missions_failed').text('Number of Missions Failed: ' + info.failed_mission_count);
+		    		$('#proposals_failed').text('Proposals Failed this Round: ' + info.failed_proposal_count);
+		    	}
+		    	
 		    	function onMessage(message) {
 		    		var info = $.parseJSON(message.data);
+		    		
+		    		updateBasicInfo(info);
 		    		
 		    		switch (info.round_state) {
 		    		case 'WAITING_FOR_TEAM_PROPOSAL':
@@ -140,6 +149,14 @@
 	<body>
 		<h1>Your role is {{role}}</h1>
 		
+		<h2>Info</h2>
+		<ul>
+			<li id="round"></li>
+			<li id="leader"></li>
+			<li id="missions_failed"></li>
+			<li id="proposals_failed"></li>
+		</ul>
+		
 		<h2>All Roles in Play</h2>
 		<ul>
 			{% for role in all_roles %}
@@ -167,6 +184,7 @@
 		<table>
 			<thead>
 				<tr>
+					<th>Round</th>
 					<th>Team Size</th>
 					<th>Number to Fail</th>
 				</tr>
@@ -174,6 +192,7 @@
 			<tbody>
 				{% for info in round_counts %}
 					<tr>
+						<td>{{ loop.index }}</td>
 						<td>{{ info[0] }}</td>
 						<td>{{ info[1] }}</td>
 					</tr>
