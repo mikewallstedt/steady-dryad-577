@@ -1,24 +1,38 @@
 <!DOCTYPE html>
+
+{% autoescape true %}
 <html>
-<head>
-<meta charset="UTF-8">
-<title>Avalon: Create Game in Room {{ room_name }}</title>
-</head>
-<body>
-
-<form method="post" action="/{{ room_name }}/create_game">
-<h1><label for="player_count">Number of Players</label></h1>
-<input type="number" min="5" max="10" value="5" name="player_count" id="player_count">
-<h1>Special Roles</h1>
-<ul>
-<li><input type="checkbox" name="merlin" id="merlin"><label for="merlin">Merlin</label></li>
-<li><input type="checkbox" name="mordred" id="mordred"><label for="mordred">Mordred</label></li>
-<li><input type="checkbox" name="morgana" id="morgana"><label for="morgana">Morgana</label></li>
-<li><input type="checkbox" name="oberon" id="oberon"><label for="oberon">Oberon</label></li>
-<li><input type="checkbox" name="percival" id="percival"><label for="percival">Percival</label></li>
-</ul>
-<input type="submit" value="Create">
-</form>
-
-</body>
+	<head>
+		<meta charset="UTF-8">
+		<!-- TODO: Include a script to validate the form, suggest number of minions. -->
+		<title>Avalon: Create Game in Room {{ room_name }}</title>
+	</head>
+	
+	<body>
+		<form method="post" action="/{{ room_name }}/create_game" id="create_game_form">
+			<h1>Special Roles</h1>
+			<ul>
+				<li><input type="checkbox" name="merlin_role" id="merlin"><label for="merlin">Merlin</label></li>
+				<li><input type="checkbox" name="mordred_role" id="mordred"><label for="mordred">Mordred</label></li>
+				<li><input type="checkbox" name="morgana_role" id="morgana"><label for="morgana">Morgana</label></li>
+				<li><input type="checkbox" name="oberon_role" id="oberon"><label for="oberon">Oberon</label></li>
+				<li><input type="checkbox" name="percival_role" id="percival"><label for="percival">Percival</label></li>
+			</ul>
+			
+			<h1>Players</h1>
+			<ul>
+			{% for nickname in nicknames %}
+  				<li><input type="checkbox" name="{{ nickname }}_name" id="{{ nickname }}_id"> <label for="{{ nickname }}_id">{{ nickname }}</label></li>
+			{% endfor %}
+			</ul>
+			
+			<h1>Number of Evil Players</h1>
+			<input type="number" name="evil_role_count">
+			<input type="submit" value="Create">
+		</form>
+		<form method="post" action="/{{ room_name }}/cancel_create_game">
+			<input type="submit" value="Cancel">
+		</form>
+	</body>
 </html>
+{% endautoescape %}

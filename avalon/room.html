@@ -7,14 +7,12 @@
     <script type="text/javascript" src="/_ah/channel/jsapi"></script>
     <script>
     $(document).ready(function() {
-    	var channel;
-    	var socket;
-    	var room_name = "{{room_name}}";
+    	var room_name = '{{room_name}}';
+    	var token = '{{ token }}';
     
     	function connectToChannel() {
-		    alert('Connect to chanel');
-		    channel = new goog.appengine.Channel('{{ token }}');
-		    socket = channel.open();
+		    var channel = new goog.appengine.Channel(token);
+		    var socket = channel.open();
 		    
 		    socket.onopen = onOpened;
 		    socket.onmessage = onMessage;
@@ -23,11 +21,51 @@
     	}
     	
     	function onOpened() {
-			$.get('state/' + room_name);
+    		// This will cause the server to notify all users of the current state.
+			$.post('/' + room_name);
     	}
     	
-    	function onMessage(msg) {
-    		alert("Msg: " + msg.data);
+    	function onMessage(message) {
+    		var info = $.parseJSON(message.data);
+    		var status = $('#status');
+    		var create_form = $('#create_form');
+    		var join_form = $('#join_form');
+    		var nicknames_list = $('#nicknames_list');
+    		
+    		switch (info.room_state) {
+    		case 'NO_GAME':
+    			status.text('No game present');
+    			create_form.css('display', 'block');
+    			join_form.css('display', 'none');
+    			break;
+    		case 'GAME_BEING_CREATED':
+    			if (info.owner_nickname) {
+    				status.text('Game being created by ' + info.owner_nickname);
+    			} else {
+    				status.text('Game being created by unknown user');
+    			}
+    			create_form.css('display', 'none');
+    			join_form.css('display', 'none');
+    			break;
+    		case 'GAME_IN_PROGRESS':
+    			status.text('Game in progress');
+    			create_form.css('display', 'none');
+    			if (message.in_game) {
+    				join_form.css('display', 'block');
+    			} else {
+    				join_form.css('display', 'none');
+    			}
+    			break;
+    		default:
+    			status.text('Room error. Try another room.');
+				create_form.css('display', 'none');
+				break;
+    		}
+    		
+    		nicknames_list.empty();
+    		$.each(info.nicknames_present, function(index, value) {
+    			nicknames_list.append($('<li>').text(value));
+    		});
     	}
     	
     	function onError() {
@@ -35,52 +73,29 @@
     	}
     	
     	function onClose() {
-    		alert ("CLOSED");
+    		alert("CLOSED");
     	}
-    	
-    	function queryRoomStatus() {
-    		var room_name = $('#room_name').attr('room_name');
-    		$.get('/state/' + room_name, function(data, status) {
-    			if (data === 'NO_GAME') {
-    				$('#create_form').css('display', 'inline');
-    				$('#join_form').css('display', 'none');
-    				$('#status_label').text('No Game Present');
-    			} else if (data === 'WAITING_FOR_PLAYERS') {
-    				$('#create_form').css('visiblity', 'none');
-    				$('#join_form').css('display', 'inline');
-    				$('#status_label').text('Waiting for Players');
-    			} else {
-    				$('#create_form').css('display', 'none');
-    				$('#join_form').css('display', 'none');
-    				if (data == 'GAME_BEING_CREATED') {
-    					// TODO: There must be some way to resume creation.
-    					$('#status_label').text('Game Creation in Progress. Please Wait.');
-    				}
-    				if (data == 'In Progress') {
-    					$('#status_label').text('Game in Progress. Not Accepting New Players.');
-    				}
-    			}
-    			setTimeout(queryRoomStatus, 10000);
-    		});
-    	}
+
     	connectToChannel();
     });
     </script>
+
     <style>
-    #create_form {
-    	display: none;
-    }
-    #join_form {
-    	display: none;
-    }
+    	#create_form {
+    		display: none;
+    	}
+    	#join_form {
+    		display: none;
+    	}
     </style>
+
     <title>Avalon Room: {{ room_name }}</title>
   </head>
   <body>
-  	<h1>Room: {{ room_name }}</h1>
-  	<!-- Just a dummy div so the JavaScript can get the room_name. -->
-    <div id="room_name" room_name="{{ room_name }}"> </div>
-    <h1 id="status_label"></h1>
+  	<h1>Avalon Room: {{ room_name }}</h1>
+    <h2 id="status"></h2>
+    <h3>List of users in this room:</h3>
+    <ul id="nicknames_list"></ul>
     <form id="create_form" method="get" action="/{{ room_name }}/create_game">
     	<input type="submit" value="Create New Game">
     </form>
