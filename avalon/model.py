@@ -1,5 +1,4 @@
 import json
-import random
 
 from google.appengine.api import channel
 from google.appengine.ext import ndb
@@ -7,7 +6,9 @@ from google.appengine.ext import ndb
 GOOD_SPECIAL_ROLES = ['merlin', 'percival']
 EVIL_SPECIAL_ROLES = ['mordred', 'morgana', 'oberon']
 SPECIAL_ROLES = [role for group in (GOOD_SPECIAL_ROLES, EVIL_SPECIAL_ROLES) for role in group]
-ROLES = [role for group in (['minion', 'loyal'], SPECIAL_ROLES) for role in group]
+EVIL_ROLES = [role for group in (EVIL_SPECIAL_ROLES, ['minion']) for role in group]
+GOOD_ROLES = [role for group in (GOOD_SPECIAL_ROLES, ['loyal']) for role in group]
+ROLES = [role for group in (GOOD_ROLES, EVIL_ROLES) for role in group]
 
 ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'GAME_IN_PROGRESS']
 
@@ -15,7 +16,7 @@ ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGR
 
 DEFAULT_PLAYER_COUNT = 5
 
-MAX_FAILED_LEADER_COUNT = 5
+MAX_FAILED_PROPOSAL_COUNT = 5
 
 MISSION_PARAMETERS = {5: [[2, 1], [3, 1], [2, 1], [3, 1], [3, 1]],
               6: [[2, 1], [3, 1], [4, 1], [3, 1], [4, 1]],
@@ -35,23 +36,77 @@ class BooleanVote(ndb.Model):
     vote = ndb.BooleanProperty(required=True)
 
 
+class Round(ndb.Model):
+    state = ndb.StringProperty(choices=ROUND_STATES, required=True, default='WAITING_FOR_TEAM_PROPOSAL')
+    failed_proposal_count = ndb.IntegerProperty(required=True, default=0)
+    team = ndb.StringProperty(repeated=True)
+    team_proposal_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
+    mission_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
+
+
 class Game(ndb.Model):
     players = ndb.UserProperty(repeated=True)
     roles = ndb.StringProperty(choices=ROLES, repeated=True)
     assignments = ndb.StructuredProperty(RoleAssignment, repeated=True)
-    
-    leader_index = ndb.IntegerProperty()
-    round_number = ndb.IntegerProperty()
-    round_state = ndb.StringProperty(choices=ROUND_STATES)
-    round_failed_leader_count = ndb.IntegerProperty()
-    team_proposal = ndb.StringProperty(repeated=True)
-    team_proposal_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
-    team = ndb.StringProperty(repeated=True)
-    mission_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
-    number_of_missions_failed = ndb.IntegerProperty()
+
+    mission_failure_count = ndb.IntegerProperty(default=0)
+    leader_index = ndb.IntegerProperty(default=0)
+    round_number = ndb.IntegerProperty(default=0)
+    round = ndb.StructuredProperty(Round)
     
     def includes_user(self, user):
         return user in self.players
+    
+    def get_role(self, user):
+        for assignment in self.assignments:
+            if assignment.user == user:
+                return assignment.role
+        return 'unknown'
+    
+    def get_identities(self, user):
+        me = self.get_role(user)
+        identities = []
+        if me == 'merlin':
+            for assignment in self.assignments:
+                nickname = assignment.user.nickname()
+                role = assignment.role
+                if assignment.user == user:
+                    identities.append([nickname, 'me'])
+                elif role in EVIL_ROLES and role not in ('mordred', 'oberon'):
+                    identities.append([nickname, 'evil'])
+                else:
+                    identities.append([nickname, ''])
+        elif me == 'percival':
+            for assignment in self.assignments:
+                nickname = assignment.user.nickname()
+                role = assignment.role
+                if assignment.user == user:
+                    identities.append([nickname, 'me'])
+                elif role in ['merlin', 'morgana']:
+                    identity = 'merlin'
+                    if 'morgana' in self.roles:
+                        identity = "merlin (or morgana)"
+                    identities.append([nickname, identity])
+                else:
+                    identities.append([nickname, ''])
+        elif me in EVIL_ROLES and me != 'oberon':
+            for assignment in self.assignments:
+                nickname = assignment.user.nickname()
+                role = assignment.role
+                if assignment.user == user:
+                    identities.append([nickname, 'me'])
+                elif assignment.role in EVIL_ROLES and assignment.role != 'oberon':
+                    identities.append([nickname, 'evil'])
+                else:
+                    identities.append([nickname, ''])
+        else:
+            for assignment in self.assignments:
+                nickname = assignment.user.nickname()
+                if assignment.user == user:
+                    identities.append([nickname, 'me'])
+                else:
+                    identities.append([nickname, ''])
+        return identities
 
 
 class Room(ndb.Model):
@@ -114,45 +169,11 @@ class Room(ndb.Model):
     def remove_user(self, user):
         if user in self.users:
             self.users.remove(user)
-
-
+    
 @ndb.transactional
-def addPlayerToGame(room_name, user):
-    room = ndb.Key(Room, room_name).get()
-    if not room or not room.game:
-        return False
-    game = Room.get(room_name).game
-    already_present = False
-    for assignment in game.assignments:
-        if assignment.user == user:
-            already_present = True
-            break
-    if already_present:
-        return True
-    if not game.available_roles:
-        return False
-    role = random.choice(game.available_roles)
-    game.assignments.append(RoleAssignment(user=user, role=role))
-    game.available_roles.remove(role)
-    if not game.available_roles:
-        # All roles are filled. Start the game.
-        # Create a random leadership order.
-        random.shuffle(game.assignments)
-        game.leader_index = 0
-        game.round_number = 0
-        game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
-        game.round_failed_leader_count = 0
-        game.number_of_missions_failed = 0
-    room.put()
-    return True
-
-
-@ndb.transactional
-def destroyGame(room_name, user):
-    room = ndb.Key(Room, room_name).get()
-    if room and room.game and room.game.assignments:
-        for assignment in room.game.assignments:
-            if assignment.user == user:
-                room.game = None
-                room.state = 'NO_GAME'
-                room.put()
+def destroy_game(room_name, user):
+    room = Room.get(room_name)
+    room.state = 'NO_GAME'
+    if room.game and room.game.includes_user(user):
+        room.game = None
+        room.put()

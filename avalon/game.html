@@ -7,7 +7,7 @@
 		<script>
 			$(document).ready(function() {
 				function queryGameStatus() {
-					var room_name = $('#room_name').attr('room_name');
+					var room_name = '{{ room_name }}';
 			 		$.get('/' + room_name + '/game_state', function(data, status) {
 						var info = $.parseJSON(data);
 						$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
@@ -74,20 +74,19 @@
 			 			}
 			 		});	
 				}
-				queryGameStatus();
+				//queryGameStatus();
 			});
 		</script>
 	</head>
 	
 	<body>
-		<!-- Just a dummy div so the JavaScript can get the room_name. -->
-		<div id="room_name" room_name="{{ room_name }}"> </div>
+		<h1>Your role is {{role}}</h1>
 		
-		<h1>You are in the game and your role is {{role}}</h1>
-		<h1 id="player_count"></h1>
-		
-		<h2>Roles in Play</h2>
-		<ul id="roles_in_play">
+		<h2>All Roles in Play</h2>
+		<ul>
+			{% for role in all_roles %}
+  				<li>{{ role }}</li>
+			{% endfor %}
 		</ul>
 		
 		<table>
@@ -97,7 +96,10 @@
 			<th>Role</th>
 			</tr>
 			</thead>
-			<tbody id="assignments">
+			<tbody>
+				{% for identity in identities %}
+  					<tr><td>{{ identity[0] }}</td><td>{{ identity[1] }}</td></tr>
+				{% endfor %}
 			</tbody>
 		</table>
 		

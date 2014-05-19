@@ -1,6 +1,5 @@
 import jinja2
 import json
-import logging
 import os
 import model
 import random
@@ -111,8 +110,6 @@ class GameCreatePage(webapp2.RequestHandler):
         roles.extend(loyal_count * ['loyal'])
         roles.extend(special_roles)
         
-        logging.critical(repr(nicknames))
-        
         players = []
         for nickname in nicknames:
             for user in room.users:
@@ -129,11 +126,10 @@ class GameCreatePage(webapp2.RequestHandler):
             available_roles.remove(role)
             assignments.append(model.RoleAssignment(user=user, role=role))
         
-        logging.critical(repr(players))
-        
         room.game = model.Game(players=players, roles=roles, assignments=assignments)
         room.state = 'GAME_IN_PROGRESS'
         room.put()
+        model.Room.notify_all(room_name)
         return self.redirect('/' + room_name)
     
 
@@ -146,29 +142,36 @@ class CancelGameCreatePage(webapp2.RequestHandler):
         model.Room.relinquish_ownership(room_name, user)
         return self.redirect('/' + room_name)
 
+    
+class GameDestroyPage(webapp2.RequestHandler):
+    
+    def post(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        model.destroy_game(room_name, user)
+        self.redirect('/' + room_name)
 
-#TODO From here onwards.
+
 class GamePage(webapp2.RequestHandler):
     
     def get(self, room_name):
         user = users.get_current_user()
         if not user:
-            return self.redirect('/' + room_name)
-        added = model.addPlayerToGame(room_name, user)
+            return self.redirect(users.create_login_url(self.request.uri))
+        
         room = model.Room.get(room_name)
-        if not room.game:
+        if not room.game or not user in room.game.players:
             return self.redirect('/' + room_name)
-        assignments = room.game.assignments
-        role = 'Unknown'
-        for assignment in assignments:
-            if user == assignment.user:
-                role = assignment.role
-                break
-        if role == 'Unknown' or not added:
-            return self.response.write('Could not add you to the game. Sorry.')
+        
+        template_values = {'room_name': room_name,
+                           'role': room.game.get_role(user),
+                           'identities': room.game.get_identities(user),
+                           'all_roles': room.game.roles}
+        
         template = JINJA_ENVIRONMENT.get_template('game.html')
-        self.response.write(template.render({'room_name': room_name, 'role': role}))
-    
+        self.response.write(template.render(template_values))
+
     
 class GameStatusPage(webapp2.RequestHandler):
     
@@ -212,50 +215,8 @@ class GameStatusPage(webapp2.RequestHandler):
                             info['vote_needed'] = False
                         else:
                             info['vote_needed'] = True
-            role = "Unassigned"
-            for assignment in room.game.assignments:
-                if assignment.user == user:
-                    role = assignment.role
             info['current_number_of_players'] = len(room.game.assignments)
             info['total_number_of_players'] = room.game.player_count
-            evil_roles = model.EVIL_SPECIAL_ROLES + ['Minion']
-            if role == 'Merlin':
-                for assignment in room.game.assignments:
-                    nickname = assignment.user.nickname()
-                    if assignment.user == user:
-                        info['identities'].append([nickname, 'me'])
-                    elif assignment.role in evil_roles and assignment.role != 'Mordred':
-                        info['identities'].append([nickname, 'evil'])
-                    else:
-                        info['identities'].append([nickname, 'unknown'])
-            elif role == 'Percival':
-                for assignment in room.game.assignments:
-                    nickname = assignment.user.nickname()
-                    if assignment.user == user:
-                        info['identities'].append([nickname, 'me'])
-                    elif assignment.role == 'Merlin' or assignment.role == 'Morgana':
-                        identity = 'Merlin'
-                        if 'Morgana' in room.game.all_roles:
-                            identity = "Merlin (or Morgana)"
-                        info['identities'].append([nickname, identity])
-                    else:
-                        info['identities'].append([nickname, 'unknown'])
-            elif role in evil_roles and role != 'Oberon':
-                for assignment in room.game.assignments:
-                    nickname = assignment.user.nickname()
-                    if assignment.user == user:
-                        info['identities'].append([nickname, 'me'])
-                    elif assignment.role in evil_roles and assignment.role != 'Oberon':
-                        info['identities'].append([nickname, 'evil'])
-                    else:
-                        info['identities'].append([nickname, 'unknown'])
-            else:
-                for assignment in room.game.assignments:
-                    nickname = assignment.user.nickname()
-                    if assignment.user == user:
-                        info['identities'].append([nickname, 'me'])
-                    else:
-                        info['identities'].append([nickname, 'unknown'])
         return self.response.write(json.dumps(info))
     
     
@@ -307,7 +268,7 @@ class VoteOnTeamProposal(webapp2.RequestHandler):
                 room.game.leader_index += 1
                 room.game.leader_index %= room.game.player_count
                 room.game.round_failed_leader_count += 1
-                if room.game.round_failed_leader_count >= model.MAX_FAILED_LEADER_COUNT:
+                if room.game.round_failed_leader_count >= model.MAX_FAILED_PROPOSAL_COUNT:
                     room.game.round_state = 'WAITING_FOR_TEAM_PROPOSAL'
                     room.game.number_of_missions_failed += 1
                     room.game.round_number += 1
@@ -321,14 +282,6 @@ class VoteOnMissionSuccess(webapp2.RequestHandler):
     def post(self, room_name):
         # TODO: Tally the votes.
         return self.redirect('/' + room_name)
-    
-
-class GameDestroyPage(webapp2.RequestHandler):
-    
-    def post(self, room_name):
-        user = users.get_current_user()
-        model.destroyGame(room_name, user)
-        self.redirect('/' + room_name)
 
 
 application = webapp2.WSGIApplication([
