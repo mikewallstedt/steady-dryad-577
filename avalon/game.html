@@ -69,7 +69,6 @@
 		    			} else {
 		    				status.text('Waiting for ' + info.leader + ' to propose a team');
 		    			}
-		    			// TODO: Show the result of the last vote.
 		    			break;
 		    		case 'VOTING_ON_TEAM':
 		    			create_team_proposal.hide();
@@ -205,6 +204,7 @@
 		<h2 id="status_message"></h2>
 		
 		<div id="create_team_proposal">
+			<!-- TODO: We need a function to validate this form upon submission. (Team size check) -->
 			<form method="post" action="/{{ room_name }}/submit_team_proposal" id="create_team_proposal_form">
 				<ul id="create_team_proposal_buttons">
 					{% for identity in identities %}
@@ -248,9 +248,17 @@
 		<div id="vote_on_mission_success">
 			<form method="post" action="/{{ room_name }}/vote_on_mission_success">
 				<ul>
-					<li><input type="radio" name="mission_success" id="mission_success_succeed" value="success"> <label for="mission_success_succeed">Succeed</label></li>
-					<li><input type="radio" name="mission_success" id="mission_success_fail" value="failure"> <label for="mission_success_fail">Fail</label></li>
-					<li><input type="submit" value="Submit">
+					<li>
+						<input type="radio" name="mission_success" id="mission_success_succeed" value="success">
+						<label for="mission_success_succeed">Succeed</label>
+					</li>
+					<li>
+						<input type="radio" name="mission_success" id="mission_success_fail" value="failure">
+						<label for="mission_success_fail">Fail</label>
+					</li>
+					<li>
+						<input type="submit" value="Submit">
+					</li>
 				</ul>
 			</form>
 		</div>
