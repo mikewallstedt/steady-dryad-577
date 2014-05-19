@@ -4,79 +4,105 @@
 		<meta charset="UTF-8">
 		<title>Avalon: {{room_name}} Game</title>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 		<script>
 			$(document).ready(function() {
-				function queryGameStatus() {
-					var room_name = '{{ room_name }}';
-			 		$.get('/' + room_name + '/game_state', function(data, status) {
-						var info = $.parseJSON(data);
-						$('#player_count').text('Players present = ' + info.current_number_of_players + ' out of ' + info.total_number_of_players);
-						assignments = $('#assignments');
-			 			assignments.empty();
-						$.each(info.identities, function(index, value) {
-							var contents = '<tr><td>' + value[0] + '</td><td>' + value[1] + '</td></tr>';
-			 				assignments.append($(contents))
-			 			});
-						$('#roles_in_play').empty();
-						$.each(info.all_roles, function(index, value) {
-							var contents = '<li>' + value + '</li>';
-							$('#roles_in_play').append($(contents));
-						});
-			 			
-						$('#vote_on_mission_success').css('display', 'none');
-						
-			 			if (info.round_state === 'WAITING_FOR_TEAM_PROPOSAL') {
-			 				if (info.you_are_the_leader) {
-				 				$('#status_message').text('Select ' + info['team_size'][0] + ' team members');
-				 				$('#create_team_proposal_buttons').empty();
-				 				$.each(info.identities, function(index, value) {
-				 					var contents = '<li><input type="checkbox" id="' + value[0] + '" name="' + value[0] + '"> <label for="' + value[0] + '">' + value[0] + '</label></li>'
-				 					$('#create_team_proposal_buttons').append($(contents));
-				 				});
-				 				var submit_button = $('<input type="submit" value="Submit Team Proposal">');
-				 				$('#create_team_proposal_buttons').append($('<li>').append(submit_button));
-				 				$('#create_team_proposal_form').submit(function() {
-				 					var number_of_boxes_checked = $('#create_team_proposal_form').find(':checkbox:checked').length;
-				 					if (number_of_boxes_checked != info['team_size'][0]) {
-				 						alert('Team should consist of ' + info['team_size'][0] + ' members. You chose ' + number_of_boxes_checked);
-				 						return false;
-				 					}
-				 					return true;
-				 				});
-			 				} else {
-			 					$('#status_message').text('Waiting for the leader to propose a team');
-			 					setTimeout(queryGameStatus, 1000);
-			 				}
-			 			} else if (info.round_state === 'VOTING_ON_TEAM') {
-			 				$('#status_message').text('');
-			 				if (info.vote_needed) {
-			 					$('#status_message').text('Enter your vote on this team proposal');
-			 					$.each(info.team_proposal, function(index, value) {
-			 						$('#team_proposal_list').append($('<li>').text(value));
-			 					});
-			 					$('#team_proposal_list').append($('<li>').append('<input type="radio" name="team_proposal_vote" value="yes" id="team_proposal_vote_yes"> <label for="team_proposal_vote_yes">Yes</label>'));
-			 					$('#team_proposal_list').append($('<li>').append('<input type="radio" name="team_proposal_vote" value="no" id="team_proposal_vote_no"> <label for="team_proposal_vote_no">No</label>'));
-			 					$('#team_proposal_list').append($('<li>').append($('<input type="submit" value="Vote">')));
-			 				} else {
-			 					$('#status_message').text('Waiting for other votes on team proposal');
-			 					setTimeout(queryGameStatus, 1000);
-			 				}
-			 			} else if (info.round_state === 'MISSION_IN_PROGRESS') {
-			 				if (info.in_team) {
-			 					$('#status_message').text('Vote on whether the mission should succeed');
-			 					$('#vote_on_mission_success').css('display', 'inline');
-			 				} else {
-			 					$('#status_message').text('Waiting for team members to vote on mission success');
-			 					setTimeout(queryGameStatus, 1000);
-			 				}
-			 			} else {
-			 				setTimeout(queryGameStatus, 1000);
-			 			}
-			 		});	
-				}
-				//queryGameStatus();
+				var room_name = '{{room_name}}';
+		    	var token = '{{ token }}';
+		    	var status = $('#status_message');
+		    	var create_team_proposal = $('#create_team_proposal');
+		    	var vote_on_team_proposal = $('#vote_on_team_proposal');
+		    	var vote_on_mission_success = $('#vote_on_mission_success');
+		    
+		    	function connectToChannel() {
+				    var channel = new goog.appengine.Channel(token);
+				    var socket = channel.open();
+				    
+				    socket.onopen = onOpened;
+				    socket.onmessage = onMessage;
+				    socket.onerror = onError;
+				    socket.onclose = onClose;    	
+		    	}
+		    	
+		    	function onOpened() {
+		    		// This will cause the server to notify all players of the current state.
+					$.post('/' + room_name + '/game');
+		    	}
+		    	
+		    	function populateTeamProposal(team) {
+		    		var team_proposal_list = $('#team_proposal_list');
+		    		team_proposal_list.empty();
+		    		$.each(team, function(index, value) {
+		    			team_proposal_list.append($('<li>' + value + '</li>'));
+		    		});
+		    	}
+		    	
+		    	function onMessage(message) {
+		    		var info = $.parseJSON(message.data);
+		    		
+		    		switch (info.round_state) {
+		    		case 'WAITING_FOR_TEAM_PROPOSAL':
+		    			vote_on_team_proposal.hide();
+		    			vote_on_mission_success.hide();
+		    			if (info.you_are_the_leader) {
+		    				status.text('You are the leader, please select a team of ' + info.team_size + ' players');
+		    				create_team_proposal.show();
+		    			} else {
+		    				status.text('Waiting for ' + info.leader + ' to propose a team');
+		    			}
+		    			// TODO: Show the result of the last vote.
+		    			break;
+		    		case 'VOTING_ON_TEAM':
+		    			create_team_proposal.hide();
+		    			vote_on_mission_success.hide();
+		    			if (info.already_voted_on_team) {
+		    				status.text('Waiting for others to vote on the team');
+		    				vote_on_team_proposal.hide();
+		    			} else {
+		    				status.text('Please vote on the proposed team');
+			    			populateTeamProposal(info.team);
+		    				vote_on_team_proposal.show();
+		    			}
+		    			break;
+		    		case 'MISSION_IN_PROGRESS':
+		    			create_team_proposal.hide();
+		    			vote_on_team_proposal.hide();
+		    			if (info.you_are_on_the_team && !info.already_voted_on_mission) {
+		    				status.text('Please vote on the success of the mission');
+		    				vote_on_mission_success.show();
+		    			} else {
+		    				status.text('Waiting for team to finish mission');
+		    				vote_on_mission_success.hide();
+		    			}
+		    			break;
+		    		default:
+		    			create_team_proposal.hide();
+	    				vote_on_team_proposal.hide();
+	    				vote_on_mission_success.hide();
+		    			status.text('Something bad has happened. Maybe try to re-enter the room.')
+		    			break;
+		    		}
+		    	}
+		    	
+		    	function onError() {
+		    		alert("ERROR");
+		    	}
+		    	
+		    	function onClose() {
+		    		alert("CLOSED");
+		    	}
+
+		    	connectToChannel();
 			});
 		</script>
+		<style>
+			#vote_on_mission_success {
+				display: none;
+			}
+			#create_team_proposal {
+				display: none;
+			}
+		</style>
 	</head>
 	
 	<body>
@@ -91,14 +117,34 @@
 		
 		<table>
 			<thead>
-			<tr>
-			<th>Player</th>
-			<th>Role</th>
-			</tr>
+				<tr>
+					<th>Player</th>
+					<th>Role</th>
+				</tr>
 			</thead>
 			<tbody>
 				{% for identity in identities %}
-  					<tr><td>{{ identity[0] }}</td><td>{{ identity[1] }}</td></tr>
+  					<tr>
+  						<td>{{ identity[0] }}</td>
+  						<td>{{ identity[1] }}</td>
+  					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		
+		<table>
+			<thead>
+				<tr>
+					<th>Team Size</th>
+					<th>Number to Fail</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for info in round_counts %}
+					<tr>
+						<td>{{ info[0] }}</td>
+						<td>{{ info[1] }}</td>
+					</tr>
 				{% endfor %}
 			</tbody>
 		</table>
@@ -108,7 +154,10 @@
 		<div id="create_team_proposal">
 			<form method="post" action="/{{ room_name }}/submit_team_proposal" id="create_team_proposal_form">
 				<ul id="create_team_proposal_buttons">
-					<!-- JavaScript will put names in here with check boxes. -->
+					{% for identity in identities %}
+  						<li><input type="checkbox" name="{{ identity[0] }}_name" id="{{ identity[0] }}_id"> <label for="{{ identity[0] }}_id">{{ identity[0] }}</label></li>
+					{% endfor %}
+					<li><input type="submit" value="Submit Proposal"></li>
 				</ul>
 			</form>
 		</div>
@@ -118,14 +167,27 @@
 				<ul id="team_proposal_list">
 					<!-- JavaScript will put the proposed names here. -->
 				</ul>
+				<ul>
+					<li>
+						<input type="radio" name="team_proposal_vote" value="yes" id="team_proposal_vote_yes">
+						<label for="team_proposal_vote_yes">Yes</label>
+					</li>
+					<li>
+						<input type="radio" name="team_proposal_vote" value="no" id="team_proposal_vote_no">
+						<label for="team_proposal_vote_no">No</label>
+					</li>
+					<li>
+						<input type="submit" value="Submit Vote">
+					</li>
+				</ul>
 			</form>
 		</div>
 		
 		<div id="vote_on_mission_success">
 			<form method="post" action="/{{ room_name }}/vote_on_mission_success">
 				<ul>
-					<li><input type="radio" name="mission_success" id="mission_success_fail" value="failure"> <label for="mission_success_fail">Fail</label></li>
 					<li><input type="radio" name="mission_success" id="mission_success_succeed" value="success"> <label for="mission_success_succeed">Succeed</label></li>
+					<li><input type="radio" name="mission_success" id="mission_success_fail" value="failure"> <label for="mission_success_fail">Fail</label></li>
 					<li><input type="submit" value="Submit">
 				</ul>
 			</form>

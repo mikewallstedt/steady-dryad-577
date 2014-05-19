@@ -12,7 +12,7 @@ ROLES = [role for group in (GOOD_ROLES, EVIL_ROLES) for role in group]
 
 ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'GAME_IN_PROGRESS']
 
-ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGRESS']
+ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGRESS', 'MISSION_OVER']
 
 DEFAULT_PLAYER_COUNT = 5
 
@@ -42,17 +42,19 @@ class Round(ndb.Model):
     team = ndb.StringProperty(repeated=True)
     team_proposal_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
     mission_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
+    players_yet_to_view_results = ndb.UserProperty(repeated=True)
 
 
 class Game(ndb.Model):
+    room_name = ndb.StringProperty(required=True)
     players = ndb.UserProperty(repeated=True)
     roles = ndb.StringProperty(choices=ROLES, repeated=True)
     assignments = ndb.StructuredProperty(RoleAssignment, repeated=True)
 
-    mission_failure_count = ndb.IntegerProperty(default=0)
+    failed_mission_count = ndb.IntegerProperty(default=0)
     leader_index = ndb.IntegerProperty(default=0)
     round_number = ndb.IntegerProperty(default=0)
-    round = ndb.StructuredProperty(Round)
+    round = ndb.StructuredProperty(Round, default=Round())
     
     def includes_user(self, user):
         return user in self.players
@@ -62,6 +64,43 @@ class Game(ndb.Model):
             if assignment.user == user:
                 return assignment.role
         return 'unknown'
+    
+    def get_client_id(self, user):
+        return user.user_id() + self.room_name + ',game'
+    
+    def notify_all(self):
+        message = {'failed_mission_count': self.failed_mission_count,
+                   'leader_index': self.leader_index,
+                   'round_number': self.round_number,
+                   'round_state': self.round.state,
+                   'failed_proposal_count': self.round.failed_proposal_count,
+                   'team': self.round.team,
+                   'team_proposal_votes': [[vote.user.nickname(), vote.vote] for vote in self.round.team_proposal_votes],
+                   'team_size': MISSION_PARAMETERS[len(self.players)][self.round_number][0],
+                   'leader': self.players[self.leader_index].nickname()}
+        
+        for user in self.players:
+            you_are_the_leader = False
+            if user == self.players[self.leader_index]:
+                you_are_the_leader = True
+            message['you_are_the_leader'] = you_are_the_leader
+            
+            you_are_on_the_team = False
+            if user in self.round.team:
+                you_are_on_the_team = True
+            message['you_are_on_the_team'] = you_are_on_the_team
+            
+            already_voted_on_team = False
+            if user in [v.user for v in self.round.team_proposal_votes]:
+                already_voted_on_team = True
+            message['already_voted_on_team'] = already_voted_on_team
+            
+            already_voted_on_mission = False
+            if user in [v.user for v in self.round.mission_votes]:
+                already_voted_on_mission = True
+            message['already_voted_on_mission'] = already_voted_on_mission
+
+            channel.send_message(self.get_client_id(user), json.dumps(message))
     
     def get_identities(self, user):
         me = self.get_role(user)
@@ -122,21 +161,25 @@ class Room(ndb.Model):
             room = Room(id=room_name, state='NO_GAME')
         return room
     
-    @staticmethod
-    def notify_all(room_name):
-        room = Room.get(room_name)
+    def get_name(self):
+        return self.key.id()
+    
+    def get_client_id(self, user):
+        return user.user_id() + self.get_name()
+    
+    def notify_all(self):
         owner_nickname = None
-        if room.owner:
-            owner_nickname = room.owner.nickname()
-        message = {'room_state': room.state,
-                   'nicknames_present': [u.nickname() for u in room.users],
+        if self.owner:
+            owner_nickname = self.owner.nickname()
+        message = {'room_state': self.state,
+                   'nicknames_present': [u.nickname() for u in self.users],
                    'owner_nickname': owner_nickname}
-        for user in room.users:
-            if room.state == 'GAME_IN_PROGRESS' and room.game and user in room.game.players:
+        for user in self.users:
+            if self.state == 'GAME_IN_PROGRESS' and self.game and user in self.game.players:
                 message['in_game'] = True
             else:
                 message['in_game'] = False
-            channel.send_message(user.user_id() + room_name, json.dumps(message))
+            channel.send_message(self.get_client_id(user), json.dumps(message))
     
     @staticmethod
     @ndb.transactional
@@ -169,6 +212,10 @@ class Room(ndb.Model):
     def remove_user(self, user):
         if user in self.users:
             self.users.remove(user)
+    
+    def create_game(self, players, roles, assignments):
+        self.game = Game(room_name=self.get_name(), players=players, roles=roles, assignments=assignments)
+        self.state = 'GAME_IN_PROGRESS'
     
 @ndb.transactional
 def destroy_game(room_name, user):
