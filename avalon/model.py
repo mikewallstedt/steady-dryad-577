@@ -14,11 +14,12 @@ ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'GAME_IN_PROGRESS']
 
 ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'TEAM_VOTE_RESULTS', 'MISSION_IN_PROGRESS', 'MISSION_OVER']
 
-DEFAULT_PLAYER_COUNT = 5
+# TODO Change this back to the real value.
+MAX_FAILED_PROPOSAL_COUNT = 1
 
-MAX_FAILED_PROPOSAL_COUNT = 5
-
-MISSION_PARAMETERS = {5: [[2, 1], [3, 1], [2, 1], [3, 1], [3, 1]],
+# TODO Remove 2-player.
+MISSION_PARAMETERS = {2: [[1, 1], [2, 2]],
+              5: [[2, 1], [3, 1], [2, 1], [3, 1], [3, 1]],
               6: [[2, 1], [3, 1], [4, 1], [3, 1], [4, 1]],
               7: [[2, 1], [3, 1], [3, 1], [4, 2], [4, 1]],
               8: [[3, 1], [4, 1], [4, 1], [5, 2], [5, 1]],
@@ -43,7 +44,14 @@ class Round(ndb.Model):
     team_proposal_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
     team_vote_acknowledgers = ndb.UserProperty(repeated=True)
     mission_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
-    players_yet_to_view_results = ndb.UserProperty(repeated=True)
+    mission_vote_acknowledgers = ndb.UserProperty(repeated=True)
+    description = ndb.StringProperty()
+    
+    def already_voted_for_mission_outcome(self, user):
+        return user in [v.user for v in self.mission_votes]
+    
+    def mission_failure_vote_count(self):
+        return sum(1 for v in self.mission_votes if not v.vote)
 
 
 class Game(ndb.Model):
@@ -78,7 +86,9 @@ class Game(ndb.Model):
                    'team': self.round.team,
                    'team_proposal_votes': [[vote.user.nickname(), vote.vote] for vote in self.round.team_proposal_votes],
                    'team_size': MISSION_PARAMETERS[len(self.players)][self.round_number][0],
-                   'leader': self.players[self.leader_index].nickname()}
+                   'leader': self.players[self.leader_index].nickname(),
+                   'mission_fail_votes': self.round.mission_failure_vote_count(),
+                   'round_description': self.round.description}
         
         if self.round.state == 'TEAM_VOTE_RESULTS':
             message['team_proposal_votes'] = [[v.user.nickname(), v.vote] for v in self.round.team_proposal_votes]
@@ -90,7 +100,7 @@ class Game(ndb.Model):
             message['you_are_the_leader'] = you_are_the_leader
             
             you_are_on_the_team = False
-            if user in self.round.team:
+            if user.nickname() in self.round.team:
                 you_are_on_the_team = True
             message['you_are_on_the_team'] = you_are_on_the_team
             
@@ -108,6 +118,11 @@ class Game(ndb.Model):
             if user in [v.user for v in self.round.mission_votes]:
                 already_voted_on_mission = True
             message['already_voted_on_mission'] = already_voted_on_mission
+            
+            already_acknowledged_mission_vote = False
+            if user in self.round.mission_vote_acknowledgers:
+                already_acknowledged_mission_vote = True
+            message['already_acknowledged_mission_vote'] = already_acknowledged_mission_vote
 
             channel.send_message(self.get_client_id(user), json.dumps(message))
     

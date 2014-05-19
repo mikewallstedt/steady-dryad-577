@@ -277,12 +277,12 @@ class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
                 room.game.round.failed_proposal_count += 1
                 if room.game.round.failed_proposal_count >= model.MAX_FAILED_PROPOSAL_COUNT:
                     room.game.failed_mission_count += 1
-                    room.game.round_number += 1
+                    room.game.round.description = 'Mission failed because we could not agree on a team.'
                     room.game.round.state = 'MISSION_OVER'
                 else:
+                    room.game.leader_index += 1
+                    room.game.leader_index %= len(room.game.players)
                     room.game.round.state = 'WAITING_FOR_TEAM_PROPOSAL'
-            room.game.leader_index += 1
-            room.game.leader_index %= len(room.game.players)
             room.game.round.team_vote_acknowledgers = []
         room.put()
         return self.redirect('/' + room_name)
@@ -291,7 +291,63 @@ class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
 class VoteOnMissionSuccess(webapp2.RequestHandler):
     
     def post(self, room_name):
-        # TODO: Tally the votes.
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        
+        room = model.Room.get(room_name)
+        if not room.game or not room.game.round.state == 'MISSION_IN_PROGRESS' or not user.nickname() in room.game.round.team or room.game.round.already_voted_for_mission_outcome(user):
+            return self.redirect('/' + room_name)
+        
+        vote = (self.request.get('mission_success') == 'success')
+        room.game.round.mission_votes.append(model.BooleanVote(user=user, vote=vote))
+        
+        if len(room.game.round.mission_votes) == len(room.game.round.team):
+            nays = room.game.round.mission_failure_vote_count()
+            nays_needed = model.MISSION_PARAMETERS[len(room.game.players)][room.game.round_number][1]
+            if nays >= nays_needed:
+                room.game.failed_mission_count += 1
+                room.game.round.description = 'Mission failed due to traitor(s)'
+            else:
+                room.game.round.description = 'Mission succeeded'
+            room.game.round.state = 'MISSION_OVER'
+
+        room.put()        
+        return self.redirect('/' + room_name)
+
+
+class AcknowledgeMissionVoteResults(webapp2.RequestHandler):
+    
+    def post(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        
+        room = model.Room.get(room_name)
+        
+        if not room.game or not room.game.round or room.game.round.state != 'MISSION_OVER' or user not in room.game.players:
+            return self.redirect('/' + room_name)
+        
+        if not room.game.round.mission_vote_acknowledgers:
+            room.game.round.mission_vote_acknowledgers = []
+            
+        import logging
+        logging.critical(room.game.round.mission_vote_acknowledgers)
+        
+        if user not in room.game.round.mission_vote_acknowledgers:
+            room.game.round.mission_vote_acknowledgers.append(user)
+        
+        logging.critical(room.game.round.mission_vote_acknowledgers)
+        logging.critical(room.game.players)
+        
+        if len(room.game.round.mission_vote_acknowledgers) == len(room.game.players):
+            room.game.round_number += 1
+            room.game.round.state = 'WAITING_FOR_TEAM_PROPOSAL'
+            room.game.leader_index += 1
+            room.game.leader_index %= len(room.game.players)
+            room.game.round.mission_vote_acknowledgers = []
+            room.game.round = model.Round()
+        room.put()
         return self.redirect('/' + room_name)
 
 
@@ -304,7 +360,8 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/submit_team_proposal', SubmitTeamProposalPage),
     (r'/(\w+)/vote_on_team_proposal', VoteOnTeamProposal),
     (r'/(\w+)/acknowledge_team_vote_results', AcknowledgeTeamVoteResults),
-    (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess)
+    (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess),
+    (r'/(\w+)/acknowledge_mission_vote_results', AcknowledgeMissionVoteResults),
     ],
     debug=True)
 
