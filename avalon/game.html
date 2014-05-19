@@ -13,6 +13,7 @@
 		    	var create_team_proposal = $('#create_team_proposal');
 		    	var vote_on_team_proposal = $('#vote_on_team_proposal');
 		    	var vote_on_mission_success = $('#vote_on_mission_success');
+		    	var team_vote_results = $('#team_vote_results');
 		    
 		    	function connectToChannel() {
 				    var channel = new goog.appengine.Channel(token);
@@ -37,6 +38,14 @@
 		    		});
 		    	}
 		    	
+		    	function populateTeamVoteResults(team_proposal_votes) {
+		    		var team_vote_results_list = $('#team_vote_results_list');
+		    		team_vote_results_list.empty();
+		    		$.each(team_proposal_votes, function(index, value) {
+		    			team_vote_results_list.append($('<li>' + value[0] + ": " + value[1] + '</li>'))
+		    		});
+		    	}
+		    	
 		    	function onMessage(message) {
 		    		var info = $.parseJSON(message.data);
 		    		
@@ -44,6 +53,7 @@
 		    		case 'WAITING_FOR_TEAM_PROPOSAL':
 		    			vote_on_team_proposal.hide();
 		    			vote_on_mission_success.hide();
+		    			team_vote_results.hide();
 		    			if (info.you_are_the_leader) {
 		    				status.text('You are the leader, please select a team of ' + info.team_size + ' players');
 		    				create_team_proposal.show();
@@ -55,6 +65,7 @@
 		    		case 'VOTING_ON_TEAM':
 		    			create_team_proposal.hide();
 		    			vote_on_mission_success.hide();
+		    			team_vote_results.hide();
 		    			if (info.already_voted_on_team) {
 		    				status.text('Waiting for others to vote on the team');
 		    				vote_on_team_proposal.hide();
@@ -64,9 +75,23 @@
 		    				vote_on_team_proposal.show();
 		    			}
 		    			break;
+		    		case 'TEAM_VOTE_RESULTS':
+		    			create_team_proposal.hide();
+		    			vote_on_team_proposal.hide();
+		    			vote_on_mission_success.hide();
+		    			if (info.already_acknowledged_team_vote) {
+		    				status.text('Waiting for other users to acknowledge seeing results');
+		    				team_vote_results.hide();
+		    			} else {
+		    				status.text('Please acknowledge that you have seen these results');
+		    				populateTeamVoteResults(info.team_proposal_votes);
+		    				team_vote_results.show();
+		    			}
+		    			break;
 		    		case 'MISSION_IN_PROGRESS':
 		    			create_team_proposal.hide();
 		    			vote_on_team_proposal.hide();
+		    			team_vote_results.hide();
 		    			if (info.you_are_on_the_team && !info.already_voted_on_mission) {
 		    				status.text('Please vote on the success of the mission');
 		    				vote_on_mission_success.show();
@@ -79,6 +104,7 @@
 		    			create_team_proposal.hide();
 	    				vote_on_team_proposal.hide();
 	    				vote_on_mission_success.hide();
+	    				team_vote_results.hide();
 		    			status.text('Something bad has happened. Maybe try to re-enter the room.')
 		    			break;
 		    		}
@@ -100,6 +126,12 @@
 				display: none;
 			}
 			#create_team_proposal {
+				display: none;
+			}
+			#team_vote_results {
+				display: none;
+			}
+			#vote_on_mission_success {
 				display: none;
 			}
 		</style>
@@ -180,6 +212,15 @@
 						<input type="submit" value="Submit Vote">
 					</li>
 				</ul>
+			</form>
+		</div>
+		
+		<div id="team_vote_results">
+			<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results">
+				<ul id="team_vote_results_list">
+					<!-- JavaScript will put the results here. -->
+				</ul>
+				<input type="submit" value="Acknowledge">
 			</form>
 		</div>
 		

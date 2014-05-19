@@ -1,5 +1,4 @@
 import jinja2
-import json
 import os
 import model
 import random
@@ -246,11 +245,32 @@ class VoteOnTeamProposal(webapp2.RequestHandler):
         
         room.game.round.team_proposal_votes.append(model.BooleanVote(user=user, vote=vote))
         if len(room.game.round.team_proposal_votes) == len(room.game.players):
+            room.game.round.state = 'TEAM_VOTE_RESULTS'
+        room.put()
+        return self.redirect('/' + room_name)
+
+
+class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
+    
+    def post(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+
+        room = model.Room.get(room_name)
+        
+        if not room.game or not room.game.round or room.game.round.state != 'TEAM_VOTE_RESULTS' or user not in room.game.players:
+            return self.redirect('/' + room_name)
+        
+        if not room.game.round.team_vote_acknowledgers:
+            room.game.round.team_vote_acknowledgers = []
+        
+        if user not in room.game.round.team_vote_acknowledgers:
+            room.game.round.team_vote_acknowledgers.append(user)
+        
+        if len(room.game.round.team_vote_acknowledgers) == len(room.game.players):
             ayes = sum(1 for vote in room.game.round.team_proposal_votes if vote.vote)
             nays = len(room.game.players) - ayes
-            import logging
-            logging.critical(room.game.round.team_proposal_votes)
-            logging.critical('ayes = %d nays = %d' % (ayes, nays))
             if ayes > nays:
                 room.game.round.state = 'MISSION_IN_PROGRESS'
             else:
@@ -263,6 +283,7 @@ class VoteOnTeamProposal(webapp2.RequestHandler):
                     room.game.round.state = 'WAITING_FOR_TEAM_PROPOSAL'
             room.game.leader_index += 1
             room.game.leader_index %= len(room.game.players)
+            room.game.round.team_vote_acknowledgers = []
         room.put()
         return self.redirect('/' + room_name)
 
@@ -282,6 +303,7 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/game', GamePage),
     (r'/(\w+)/submit_team_proposal', SubmitTeamProposalPage),
     (r'/(\w+)/vote_on_team_proposal', VoteOnTeamProposal),
+    (r'/(\w+)/acknowledge_team_vote_results', AcknowledgeTeamVoteResults),
     (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess)
     ],
     debug=True)

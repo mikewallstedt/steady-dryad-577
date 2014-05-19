@@ -12,7 +12,7 @@ ROLES = [role for group in (GOOD_ROLES, EVIL_ROLES) for role in group]
 
 ROOM_STATES = ['NO_GAME', 'GAME_BEING_CREATED', 'GAME_IN_PROGRESS']
 
-ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'MISSION_IN_PROGRESS', 'MISSION_OVER']
+ROUND_STATES = ['WAITING_FOR_TEAM_PROPOSAL', 'VOTING_ON_TEAM', 'TEAM_VOTE_RESULTS', 'MISSION_IN_PROGRESS', 'MISSION_OVER']
 
 DEFAULT_PLAYER_COUNT = 5
 
@@ -41,6 +41,7 @@ class Round(ndb.Model):
     failed_proposal_count = ndb.IntegerProperty(required=True, default=0)
     team = ndb.StringProperty(repeated=True)
     team_proposal_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
+    team_vote_acknowledgers = ndb.UserProperty(repeated=True)
     mission_votes = ndb.StructuredProperty(BooleanVote, repeated=True)
     players_yet_to_view_results = ndb.UserProperty(repeated=True)
 
@@ -79,6 +80,9 @@ class Game(ndb.Model):
                    'team_size': MISSION_PARAMETERS[len(self.players)][self.round_number][0],
                    'leader': self.players[self.leader_index].nickname()}
         
+        if self.round.state == 'TEAM_VOTE_RESULTS':
+            message['team_proposal_votes'] = [[v.user.nickname(), v.vote] for v in self.round.team_proposal_votes]
+        
         for user in self.players:
             you_are_the_leader = False
             if user == self.players[self.leader_index]:
@@ -94,6 +98,11 @@ class Game(ndb.Model):
             if user in [v.user for v in self.round.team_proposal_votes]:
                 already_voted_on_team = True
             message['already_voted_on_team'] = already_voted_on_team
+            
+            already_acknowledged_team_vote = False
+            if user in self.round.team_vote_acknowledgers:
+                already_acknowledged_team_vote = True
+            message['already_acknowledged_team_vote'] = already_acknowledged_team_vote
             
             already_voted_on_mission = False
             if user in [v.user for v in self.round.mission_votes]:
