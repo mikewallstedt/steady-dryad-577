@@ -20,11 +20,11 @@
 	    			var merlin_checked = $('#merlin').is(':checked');
 	    			var assassin_checked = $('#assassin').is(':checked');
 	    			
-	    			if (number_of_players < 5) {
-	    				alert('Game requires at least 5 players');
+	    			if (number_of_players < {{ min_players }}) {
+	    				alert('Game requires at least {{ min_players }} players');
 	    				return false;
-	    			} else if (number_of_players > 10) {
-	    				alert('At most 10 players are allowed per game');
+	    			} else if (number_of_players > {{ max_players }}) {
+	    				alert('At most {{ max_players }} players are allowed per game');
 	    				return false;
 	    			} else if (number_of_players < number_of_good_special + number_of_evil_special) {
 	    				alert('Too many special roles for the number of players');

@@ -67,7 +67,9 @@ class GameCreatePage(webapp2.RequestHandler):
         room.notify_all()
 
         template_values = {'room_name': room_name,
-                           'nicknames': [u.nickname() for u in room.users]}
+                           'nicknames': [u.nickname() for u in room.users],
+                           'max_players': max(model.MISSION_PARAMETERS.keys()),
+                           'min_players': min(model.MISSION_PARAMETERS.keys())}
         
         template = JINJA_ENVIRONMENT.get_template('create_game.html')
         self.response.write(template.render(template_values))
