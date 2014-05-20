@@ -16,7 +16,7 @@
 	<body>
 		<div data-role="page">
 			<div data-role="header">
-				<h1>Create Game: {{ room_name }}</h1>
+				<h1>Create: {{ room_name }}</h1>
 			</div>
 	
 			<div data-role="main" class="ui-content">
@@ -48,10 +48,10 @@
 						<input type="number" name="evil_role_count" id="evil_role_count" placeholder="number of evil players">
 					</div>
 
-					<input type="submit" value="Create">
+					<input type="submit" data-icon="check" data-inline="true" value="Create">
 				</form>
 				<form method="post" action="/{{ room_name }}/cancel_create_game" data-ajax="false">
-					<input type="submit" value="Cancel">
+					<input type="submit" data-icon="delete" data-inline="true" value="Cancel">
 				</form>
 			</div>
 		</div>

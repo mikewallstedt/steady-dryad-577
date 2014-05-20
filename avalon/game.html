@@ -159,7 +159,7 @@
 
 		    	connectToChannel();
 		    	// Wait for the channel to be set up, then notify the server that I am ready for a message.
-		    	setTimeout(function() {$.post('/' + room_name + '/game');}, 500);
+		    	setTimeout(function() {$.post('/' + room_name + '/game');}, 1000);
 			});
 		</script>
 		<style>
@@ -252,90 +252,91 @@
 				
 				<div id="create_team_proposal">
 					<!-- TODO: We need a function to validate this form upon submission. (Team size check) -->
-					<form method="post" action="/{{ room_name }}/submit_team_proposal" id="create_team_proposal_form" data-ajax="false">
-						<ul id="create_team_proposal_buttons">
+					<form method="post" action="/{{ room_name }}/submit_team_proposal"
+						id="create_team_proposal_form" data-ajax="false">
+						<div class="ui-field-contain">
+						<fieldset data-role="controlgroup">
+							<legend>Select team:</legend>
 							{% for identity in identities %}
-		  						<li><input type="checkbox" name="{{ identity[0] }}_name" id="{{ identity[0] }}_id"> <label for="{{ identity[0] }}_id">{{ identity[0] }}</label></li>
+		  						<input type="checkbox" name="{{ identity[0] }}_name" id="{{ identity[0] }}_id">
+		  						<label for="{{ identity[0] }}_id">{{ identity[0] }}</label>
 							{% endfor %}
-							<li><input type="submit" value="Submit Proposal"></li>
-						</ul>
+							<input type="submit" data-icon="check" data-inline="true" value="Submit Team Proposal">
+						</fieldset>
+						</div>
 					</form>
 				</div>
 				
 				<div id="vote_on_team_proposal">
+					<ul id="team_proposal_list">
+						<!-- JavaScript will put the proposed names here. -->
+					</ul>
 					<form method="post" action="/{{ room_name }}/vote_on_team_proposal" id="vote_on_team_proposal_form", data-ajax="false">
-						<ul id="team_proposal_list">
-							<!-- JavaScript will put the proposed names here. -->
-						</ul>
-						<ul>
-							<li>
-								<input type="radio" name="team_proposal_vote" value="yes" id="team_proposal_vote_yes">
-								<label for="team_proposal_vote_yes">Yes</label>
-							</li>
-							<li>
-								<input type="radio" name="team_proposal_vote" value="no" id="team_proposal_vote_no">
-								<label for="team_proposal_vote_no">No</label>
-							</li>
-							<li>
-								<input type="submit" value="Submit Vote">
-							</li>
-						</ul>
+						<div class="ui-field-contain">
+						<fieldset data-role="controlgroup">
+							<input type="radio" name="team_proposal_vote" value="yes" id="team_proposal_vote_yes" checked>
+							<label for="team_proposal_vote_yes">Yes</label>
+
+							<input type="radio" name="team_proposal_vote" value="no" id="team_proposal_vote_no">
+							<label for="team_proposal_vote_no">No</label>
+						</fieldset>
+						</div>
+						<input type="submit" data-icon="check" data-inline="true" value="Submit Vote">
 					</form>
 				</div>
 				
 				<div id="team_vote_results">
-					<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results", data-ajax="false">
-						<ul id="team_vote_results_list">
-							<!-- JavaScript will put the results here. -->
-						</ul>
-						<input type="submit" value="Acknowledge">
+					<ul id="team_vote_results_list">
+						<!-- JavaScript will put the results here. -->
+					</ul>
+					<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results" data-ajax="false">
+						<input type="submit" data-icon="check" data-inline="true" value="Acknowledge">
 					</form>
 				</div>
 				
 				<div id="vote_on_mission_success">
-					<form method="post" action="/{{ room_name }}/vote_on_mission_success", data-ajax="false">
-						<ul>
-							<li>
-								<input type="radio" name="mission_success" id="mission_success_succeed" value="success">
-								<label for="mission_success_succeed">Succeed</label>
-							</li>
-							<li>
-								<input type="radio" name="mission_success" id="mission_success_fail" value="failure">
-								<label for="mission_success_fail">Fail</label>
-							</li>
-							<li>
-								<input type="submit" value="Submit">
-							</li>
-						</ul>
+					<form method="post" action="/{{ room_name }}/vote_on_mission_success" data-ajax="false">
+						<div class="ui-field-contain">
+						<fieldset data-role="controlgroup">
+							<input type="radio" name="mission_success" id="mission_success_succeed" value="success" checked>
+							<label for="mission_success_succeed">Succeed</label>
+
+							<input type="radio" name="mission_success" id="mission_success_fail" value="failure">
+							<label for="mission_success_fail">Fail</label>
+						</fieldset>
+						</div>
+						<input type="submit" data-icon="check" data-inline="true" value="Submit">
 					</form>
 				</div>
 				
 				<div id="mission_vote_results">
-					<form method="post" action="/{{ room_name }}/acknowledge_mission_vote_results", data-ajax="false">
-						<ul id="mission_vote_results_list">
-							<!-- JavaScript will put the results here. -->
-						</ul>
-						<input type="submit" value="Acknowledge">
+					<ul id="mission_vote_results_list">
+						<!-- JavaScript will put the results here. -->
+					</ul>
+					<form method="post" action="/{{ room_name }}/acknowledge_mission_vote_results" data-ajax="false">
+						<input type="submit" data-icon="check" data-inline="true" value="Acknowledge">
 					</form>
 				</div>
 				
 				<div id="assassin_form">
 					<h2>You are the assassin. Choose a target.</h2>
 					<form method="post" action="/{{ room_name }}/assassin" data-ajax="false">
+						<div class="ui-field-contain">
+						<fieldset data-role="controlgroup">
 						{% for identity in identities %}
-		  					<li>
-		  						<input type="radio" name="assassin_target" value="{{ identity[0] }}" id="{{ identity[0] }}_id">
-		  						<label for="{{ identity[0] }}_id">{{ identity[0] }}</label>
-		  					</li>
+	  						<input type="radio" name="assassin_target" value="{{ identity[0] }}" id="{{ identity[0] }}_id">
+	  						<label for="{{ identity[0] }}_id">{{ identity[0] }}</label>
 						{% endfor %}
-						<input type="submit" value="Attempt Assassination">
+						</fieldset>
+						</div>
+						<input type="submit" data-icon="check" data-inline="true" value="Attempt Assassination">
 					</form>
 				</div>
 				
 				<form method="post" action="/{{ room_name }}/destroy_game"
 					onsubmit="return confirm('Are you sure you want to destroy the game?')"
 					data-ajax="false">
-					<input type="submit" value="Destroy Game">
+					<input type="submit" data-icon="delete" data-inline="true" value="Destroy Game">
 				</form>
 			</div>
 		</div>
