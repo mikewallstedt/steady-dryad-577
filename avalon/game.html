@@ -2,9 +2,13 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
+	  	<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+	    <script type="text/javascript" src="/_ah/channel/jsapi"></script>
 		<title>Avalon: {{room_name}} Game</title>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-		<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+		
 		<script>
 			$(document).ready(function() {
 				var room_name = '{{room_name}}';
@@ -184,147 +188,156 @@
 	</head>
 	
 	<body>
-		<h1>Your role is {{role}}</h1>
-		
-		<h2>Info</h2>
-		<ul>
-			<li id="round"></li>
-			<li id="leader"></li>
-			<li id="missions_failed"></li>
-			<li id="proposals_failed"></li>
-		</ul>
-		
-		<h2>All Roles in Play</h2>
-		<ul>
-			{% for role in all_roles %}
-  				<li>{{ role }}</li>
-			{% endfor %}
-		</ul>
-		
-		<h2>All Players in Game</h2>
-		<table>
-			<thead>
-				<tr>
-					<th>Player</th>
-					<th>Role</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for identity in identities %}
-  					<tr>
-  						<td>{{ identity[0] }}</td>
-  						<td>{{ identity[1] }}</td>
-  					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-		
-		<h2>Team Size by Round</h2>
-		<table>
-			<thead>
-				<tr>
-					<th>Round</th>
-					<th>Team Size</th>
-					<th>Number to Fail</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for info in round_counts %}
-					<tr>
-						<td>{{ loop.index }}</td>
-						<td>{{ info[0] }}</td>
-						<td>{{ info[1] }}</td>
-					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-		
-		<h2 id="status_message"></h2>
-		
-		<div id="create_team_proposal">
-			<!-- TODO: We need a function to validate this form upon submission. (Team size check) -->
-			<form method="post" action="/{{ room_name }}/submit_team_proposal" id="create_team_proposal_form">
-				<ul id="create_team_proposal_buttons">
-					{% for identity in identities %}
-  						<li><input type="checkbox" name="{{ identity[0] }}_name" id="{{ identity[0] }}_id"> <label for="{{ identity[0] }}_id">{{ identity[0] }}</label></li>
+		<div data-role="page">
+			<div data-role="header">
+				<h1>Your role is {{role}}</h1>
+			</div>
+
+			<div data-role="main" class="ui-content">
+			
+				<h2>Info</h2>
+				<ul>
+					<li id="round"></li>
+					<li id="leader"></li>
+					<li id="missions_failed"></li>
+					<li id="proposals_failed"></li>
+				</ul>
+				
+				<h2>All Roles in Play</h2>
+				<ul>
+					{% for role in all_roles %}
+		  				<li>{{ role }}</li>
 					{% endfor %}
-					<li><input type="submit" value="Submit Proposal"></li>
 				</ul>
-			</form>
+				
+				<h2>All Players in Game</h2>
+				<table>
+					<thead>
+						<tr>
+							<th>Player</th>
+							<th>Role</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for identity in identities %}
+		  					<tr>
+		  						<td>{{ identity[0] }}</td>
+		  						<td>{{ identity[1] }}</td>
+		  					</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				
+				<h2>Team Size by Round</h2>
+				<table>
+					<thead>
+						<tr>
+							<th>Round</th>
+							<th>Team Size</th>
+							<th>Number to Fail</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for info in round_counts %}
+							<tr>
+								<td>{{ loop.index }}</td>
+								<td>{{ info[0] }}</td>
+								<td>{{ info[1] }}</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				
+				<h2 id="status_message"></h2>
+				
+				<div id="create_team_proposal">
+					<!-- TODO: We need a function to validate this form upon submission. (Team size check) -->
+					<form method="post" action="/{{ room_name }}/submit_team_proposal" id="create_team_proposal_form" data-ajax="false">
+						<ul id="create_team_proposal_buttons">
+							{% for identity in identities %}
+		  						<li><input type="checkbox" name="{{ identity[0] }}_name" id="{{ identity[0] }}_id"> <label for="{{ identity[0] }}_id">{{ identity[0] }}</label></li>
+							{% endfor %}
+							<li><input type="submit" value="Submit Proposal"></li>
+						</ul>
+					</form>
+				</div>
+				
+				<div id="vote_on_team_proposal">
+					<form method="post" action="/{{ room_name }}/vote_on_team_proposal" id="vote_on_team_proposal_form", data-ajax="false">
+						<ul id="team_proposal_list">
+							<!-- JavaScript will put the proposed names here. -->
+						</ul>
+						<ul>
+							<li>
+								<input type="radio" name="team_proposal_vote" value="yes" id="team_proposal_vote_yes">
+								<label for="team_proposal_vote_yes">Yes</label>
+							</li>
+							<li>
+								<input type="radio" name="team_proposal_vote" value="no" id="team_proposal_vote_no">
+								<label for="team_proposal_vote_no">No</label>
+							</li>
+							<li>
+								<input type="submit" value="Submit Vote">
+							</li>
+						</ul>
+					</form>
+				</div>
+				
+				<div id="team_vote_results">
+					<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results", data-ajax="false">
+						<ul id="team_vote_results_list">
+							<!-- JavaScript will put the results here. -->
+						</ul>
+						<input type="submit" value="Acknowledge">
+					</form>
+				</div>
+				
+				<div id="vote_on_mission_success">
+					<form method="post" action="/{{ room_name }}/vote_on_mission_success", data-ajax="false">
+						<ul>
+							<li>
+								<input type="radio" name="mission_success" id="mission_success_succeed" value="success">
+								<label for="mission_success_succeed">Succeed</label>
+							</li>
+							<li>
+								<input type="radio" name="mission_success" id="mission_success_fail" value="failure">
+								<label for="mission_success_fail">Fail</label>
+							</li>
+							<li>
+								<input type="submit" value="Submit">
+							</li>
+						</ul>
+					</form>
+				</div>
+				
+				<div id="mission_vote_results">
+					<form method="post" action="/{{ room_name }}/acknowledge_mission_vote_results", data-ajax="false">
+						<ul id="mission_vote_results_list">
+							<!-- JavaScript will put the results here. -->
+						</ul>
+						<input type="submit" value="Acknowledge">
+					</form>
+				</div>
+				
+				<div id="assassin_form">
+					<h2>You are the assassin. Choose a target.</h2>
+					<form method="post" action="/{{ room_name }}/assassin" data-ajax="false">
+						{% for identity in identities %}
+		  					<li>
+		  						<input type="radio" name="assassin_target" value="{{ identity[0] }}" id="{{ identity[0] }}_id">
+		  						<label for="{{ identity[0] }}_id">{{ identity[0] }}</label>
+		  					</li>
+						{% endfor %}
+						<input type="submit" value="Attempt Assassination">
+					</form>
+				</div>
+				
+				<form method="post" action="/{{ room_name }}/destroy_game"
+					onsubmit="return confirm('Are you sure you want to destroy the game?')"
+					data-ajax="false">
+					<input type="submit" value="Destroy Game">
+				</form>
+			</div>
 		</div>
-		
-		<div id="vote_on_team_proposal">
-			<form method="post" action="/{{ room_name }}/vote_on_team_proposal" id="vote_on_team_proposal_form">
-				<ul id="team_proposal_list">
-					<!-- JavaScript will put the proposed names here. -->
-				</ul>
-				<ul>
-					<li>
-						<input type="radio" name="team_proposal_vote" value="yes" id="team_proposal_vote_yes">
-						<label for="team_proposal_vote_yes">Yes</label>
-					</li>
-					<li>
-						<input type="radio" name="team_proposal_vote" value="no" id="team_proposal_vote_no">
-						<label for="team_proposal_vote_no">No</label>
-					</li>
-					<li>
-						<input type="submit" value="Submit Vote">
-					</li>
-				</ul>
-			</form>
-		</div>
-		
-		<div id="team_vote_results">
-			<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results">
-				<ul id="team_vote_results_list">
-					<!-- JavaScript will put the results here. -->
-				</ul>
-				<input type="submit" value="Acknowledge">
-			</form>
-		</div>
-		
-		<div id="vote_on_mission_success">
-			<form method="post" action="/{{ room_name }}/vote_on_mission_success">
-				<ul>
-					<li>
-						<input type="radio" name="mission_success" id="mission_success_succeed" value="success">
-						<label for="mission_success_succeed">Succeed</label>
-					</li>
-					<li>
-						<input type="radio" name="mission_success" id="mission_success_fail" value="failure">
-						<label for="mission_success_fail">Fail</label>
-					</li>
-					<li>
-						<input type="submit" value="Submit">
-					</li>
-				</ul>
-			</form>
-		</div>
-		
-		<div id="mission_vote_results">
-			<form method="post" action="/{{ room_name }}/acknowledge_mission_vote_results">
-				<ul id="mission_vote_results_list">
-					<!-- JavaScript will put the results here. -->
-				</ul>
-				<input type="submit" value="Acknowledge">
-			</form>
-		</div>
-		
-		<div id="assassin_form">
-			<h2>You are the assassin. Choose a target.</h2>
-			<form method="post" action="/{{ room_name }}/assassin">
-				{% for identity in identities %}
-  					<li>
-  						<input type="radio" name="assassin_target" value="{{ identity[0] }}" id="{{ identity[0] }}_id">
-  						<label for="{{ identity[0] }}_id">{{ identity[0] }}</label>
-  					</li>
-				{% endfor %}
-				<input type="submit" value="Attempt Assassination">
-			</form>
-		</div>
-		
-		<form method="post" action="/{{ room_name }}/destroy_game" onsubmit="return confirm('Are you sure you want to destroy the game?')">
-			<input type="submit" value="Destroy Game">
-		</form>
 	</body>
 </html>

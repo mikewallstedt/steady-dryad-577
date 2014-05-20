@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet"
+	href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script
+	src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+<meta charset="UTF-8">
+<title>Avalon</title>
+</head>
+<body>
+	<div data-role="page">
+		<div data-role="header">
+			<h1>Welcome to Avalon</h1>
+		</div>
+
+		<div data-role="main" class="ui-content">
+			<p>Avalon games occur in rooms.</p>
+			<p>Pick a unique room name and tell it to your friends so you can all go to the same room.</p>
+			<form method="post" action="/" data-ajax="false">
+				<div class="ui-field-contain">
+					<label for="room_name">Room name:</label>
+					<input type="text" name="room_name" id="room_name" placeholder="Enter room name">
+				</div>
+				<input type="submit" data-inline="true" value="Go to room">
+			</form>
+		</div>
+	</div>
+
+</body>
+</html>

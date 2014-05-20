@@ -3,8 +3,13 @@
 {% autoescape true %}
 <html>
   <head>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  	<meta charset="UTF-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
     <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+    
     <script>
     $(document).ready(function() {
     	var room_name = '{{room_name}}';
@@ -68,11 +73,11 @@
     	}
     	
     	function onError() {
-    		alert("ERROR");
+    		//alert("ERROR");
     	}
     	
     	function onClose() {
-    		alert("CLOSED");
+    		//alert("CLOSED");
     	}
 
     	connectToChannel();
@@ -80,7 +85,7 @@
     	setTimeout(function() {$.post('/' + room_name);}, 1000);
     });
     </script>
-
+    
     <style>
     	#create_form {
     		display: none;
@@ -93,16 +98,30 @@
     <title>Avalon Room: {{ room_name }}</title>
   </head>
   <body>
-  	<h1>Avalon Room: {{ room_name }}</h1>
-    <h2 id="status"></h2>
-    <h3>List of users in this room:</h3>
-    <ul id="nicknames_list"></ul>
-    <form id="create_form" method="get" action="/{{ room_name }}/create_game">
-    	<input type="submit" value="Create New Game">
-    </form>
-    <form id="join_form" method="get" action="/{{ room_name }}/game">
-    	<input type="submit" value="Join Game">
-    </form>
-  </body>
+	<div data-role="page">
+		<div data-role="header">
+			<h1>You are now in room: {{ room_name }}</h1>
+		</div>
+
+		<div data-role="main" class="ui-content">
+			<h2 id="status"></h2>
+			<h3>List of users in this room:</h3>
+
+
+			<ul id="nicknames_list"></ul>
+
+			<form id="create_form" method="get"
+				action="/{{ room_name }}/create_game" data-ajax="false">
+				<input type="submit" value="Create New Game">
+			</form>
+
+			<form id="join_form" method="get" action="/{{ room_name }}/game"
+				data-ajax="false">
+				<input type="submit" value="Join Game">
+			</form>
+		</div>
+	</div>
+
+</body>
 </html> 
 {% endautoescape %}

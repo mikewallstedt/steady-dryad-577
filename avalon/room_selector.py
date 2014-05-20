@@ -1,27 +1,22 @@
+import jinja2
+import os
 import uuid
 import webapp2
+
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 
-HTML = """
-<!doctype html>
-<html>
-  <head>
-    <title>Avalon</title>
-  </head>
-  <body>
-    <form method="post" action="/" >
-      Enter Room Name: <input type="text" name="room_name">
-      <input type="submit" value="Join">
-    </form>
-  </body>
-</html>
-"""
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'],
+    autoescape=True
+)
 
 class MainPage(webapp2.RequestHandler):
     
     def get(self):
-        self.response.write(HTML)
+        template = JINJA_ENVIRONMENT.get_template('room_selector.html')
+        self.response.write(template.render())
 
     def post(self):
         room_name = self.request.get('room_name')
