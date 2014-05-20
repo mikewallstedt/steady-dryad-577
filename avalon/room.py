@@ -207,7 +207,8 @@ class SubmitTeamProposalPage(webapp2.RequestHandler):
                     return self.redirect('/' + room_name)
                 proposal.append(nickname)
         
-        room.game.round = model.Round()
+        room.game.round.team_proposal_votes = []
+        room.game.round.team_vote_acknowledgers = []
         room.game.round.team = proposal
         room.game.round.players_yet_to_view_results = room.game.players
         room.game.round.state = 'VOTING_ON_TEAM'
