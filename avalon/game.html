@@ -147,6 +147,15 @@
 		    			status.text('Something bad has happened. Maybe try to re-enter the room.')
 		    			break;
 		    		}
+		    		
+		    		$('#create_team_proposal_form').submit(function() {
+	 					var number_of_boxes_checked = $('#create_team_proposal_form').find(':checkbox:checked').length;
+	 					if (number_of_boxes_checked != info.team_size) {
+	 						alert('Team should consist of ' + info.team_size + ' members. You chose ' + number_of_boxes_checked);
+	 						return false;
+	 					}
+	 					return true;
+	 				});
 		    	}
 		    	
 		    	function onError() {
@@ -251,7 +260,6 @@
 				<h2 id="status_message"></h2>
 				
 				<div id="create_team_proposal">
-					<!-- TODO: We need a function to validate this form upon submission. (Team size check) -->
 					<form method="post" action="/{{ room_name }}/submit_team_proposal"
 						id="create_team_proposal_form" data-ajax="false">
 						<div class="ui-field-contain">
