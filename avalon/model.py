@@ -79,11 +79,14 @@ class Game(ndb.Model):
         return user.user_id() + self.room_name + ',game'
     
     def notify_all(self):
+        proposals_remaining = MAX_FAILED_PROPOSAL_COUNT - self.round.failed_proposal_count
+        if proposals_remaining < 0:
+            proposals_remaining = 'Caused mission failure'
         message = {'failed_mission_count': self.failed_mission_count,
                    'leader_index': self.leader_index,
                    'round_number': self.round_number,
                    'round_state': self.round.state,
-                   'failed_proposal_count': self.round.failed_proposal_count,
+                   'proposals_remaining_count': proposals_remaining,
                    'team': self.round.team,
                    'team_proposal_votes': [[vote.user.nickname(), vote.vote] for vote in self.round.team_proposal_votes],
                    'team_size': MISSION_PARAMETERS[len(self.players)][self.round_number][0],

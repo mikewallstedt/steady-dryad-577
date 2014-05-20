@@ -249,6 +249,15 @@ class VoteOnTeamProposal(webapp2.RequestHandler):
         room.game.round.team_proposal_votes.append(model.BooleanVote(user=user, vote=vote))
         if len(room.game.round.team_proposal_votes) == len(room.game.players):
             room.game.round.state = 'TEAM_VOTE_RESULTS'
+            ayes = sum(1 for vote in room.game.round.team_proposal_votes if vote.vote)
+            nays = len(room.game.players) - ayes
+            if ayes <= nays:
+                room.game.round.failed_proposal_count += 1
+                if room.game.round.failed_proposal_count > model.MAX_FAILED_PROPOSAL_COUNT:
+                    room.game.failed_mission_count += 1
+                else:
+                    room.game.leader_index += 1
+                    room.game.leader_index %= len(room.game.players)
         room.put()
         return self.redirect('/' + room_name)
 
@@ -278,14 +287,10 @@ class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
             if ayes > nays:
                 room.game.round.state = 'MISSION_IN_PROGRESS'
             else:
-                room.game.round.failed_proposal_count += 1
-                if room.game.round.failed_proposal_count >= model.MAX_FAILED_PROPOSAL_COUNT:
-                    room.game.failed_mission_count += 1
+                if room.game.round.failed_proposal_count > model.MAX_FAILED_PROPOSAL_COUNT:
                     room.game.round.description = 'Mission failed because we could not agree on a team.'
                     room.game.round.state = 'MISSION_OVER'
                 else:
-                    room.game.leader_index += 1
-                    room.game.leader_index %= len(room.game.players)
                     room.game.round.state = 'WAITING_FOR_TEAM_PROPOSAL'
             room.game.round.team_vote_acknowledgers = []
         room.put()
