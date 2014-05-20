@@ -129,6 +129,14 @@
 		    				mission_vote_results.show();
 		    			}
 		    			break;
+		    		case 'CLEANUP':
+		    			create_team_proposal.hide();
+	    				vote_on_team_proposal.hide();
+	    				vote_on_mission_success.hide();
+	    				team_vote_results.hide();
+	    				mission_vote_results.hide();
+	    				status.text('GAME OVER')
+		    			break;
 		    		default:
 		    			create_team_proposal.hide();
 	    				vote_on_team_proposal.hide();

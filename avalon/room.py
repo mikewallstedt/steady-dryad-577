@@ -341,12 +341,13 @@ class AcknowledgeMissionVoteResults(webapp2.RequestHandler):
         logging.critical(room.game.players)
         
         if len(room.game.round.mission_vote_acknowledgers) == len(room.game.players):
-            room.game.round_number += 1
-            room.game.round.state = 'WAITING_FOR_TEAM_PROPOSAL'
-            room.game.leader_index += 1
-            room.game.leader_index %= len(room.game.players)
-            room.game.round.mission_vote_acknowledgers = []
-            room.game.round = model.Round()
+            if room.game.round_number == len(model.MISSION_PARAMETERS[len(room.game.players)]) - 1:
+                room.game.round.state = 'CLEANUP'
+            else:
+                room.game.round_number += 1
+                room.game.leader_index += 1
+                room.game.leader_index %= len(room.game.players)
+                room.game.round = model.Round()
         room.put()
         return self.redirect('/' + room_name)
 
