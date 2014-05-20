@@ -79,6 +79,7 @@ class GameCreatePage(webapp2.RequestHandler):
         return True
         
 
+    @ndb.transactional
     def post(self, room_name):
         user = users.get_current_user()
         if not user:
@@ -186,6 +187,7 @@ class GamePage(webapp2.RequestHandler):
     
 class SubmitTeamProposalPage(webapp2.RequestHandler):
     
+    @ndb.transactional
     def post(self, room_name):
         user = users.get_current_user()
         if not user:
@@ -252,6 +254,7 @@ class VoteOnTeamProposal(webapp2.RequestHandler):
 
 class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
     
+    @ndb.transactional
     def post(self, room_name):
         user = users.get_current_user()
         if not user:
@@ -290,6 +293,7 @@ class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
 
 class VoteOnMissionSuccess(webapp2.RequestHandler):
     
+    @ndb.transactional
     def post(self, room_name):
         user = users.get_current_user()
         if not user:
@@ -318,6 +322,7 @@ class VoteOnMissionSuccess(webapp2.RequestHandler):
 
 class AcknowledgeMissionVoteResults(webapp2.RequestHandler):
     
+    @ndb.transactional
     def post(self, room_name):
         user = users.get_current_user()
         if not user:
@@ -348,6 +353,7 @@ class AcknowledgeMissionVoteResults(webapp2.RequestHandler):
 
 class AssassinPage(webapp2.RequestHandler):
     
+    @ndb.transactional
     def post(self, room_name):
         user = users.get_current_user()
         if not user:
@@ -363,13 +369,10 @@ class AssassinPage(webapp2.RequestHandler):
             return self.redirect('/' + room_name)
         
         assassin_target = self.request.get('assassin_target')
-        import logging
-        logging.critical('target = ' + assassin_target)
         merlin_nickname = None
         for assignment in room.game.assignments:
             if assignment.role == 'merlin':
                 merlin_nickname = assignment.user.nickname()
-        logging.critical('merlin_nickname = ' + merlin_nickname)
         
         if assassin_target == merlin_nickname:
             room.game.assassin_correct = True
