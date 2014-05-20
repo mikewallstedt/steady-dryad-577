@@ -1,5 +1,6 @@
 import jinja2
 import os
+import logging
 import model
 import random
 import webapp2
@@ -402,6 +403,7 @@ application = webapp2.WSGIApplication([
 
 # TODO remove this?
 def main():
+    logging.getLogger().setLevel(logging.DEBUG)
     run_wsgi_app(application)
 
 if __name__ == "__main__":

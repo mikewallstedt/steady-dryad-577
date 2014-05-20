@@ -1,4 +1,4 @@
-application: avalon
+application: steady-dryad-577
 version: 1
 runtime: python27
 threadsafe: false

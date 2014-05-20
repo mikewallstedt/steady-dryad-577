@@ -28,8 +28,7 @@
 		    	}
 		    	
 		    	function onOpened() {
-		    		// This will cause the server to notify all players of the current state.
-					$.post('/' + room_name + '/game');
+		    		// Do nothing.
 		    	}
 		    	
 		    	function populateTeamProposal(team) {
@@ -155,6 +154,8 @@
 		    	}
 
 		    	connectToChannel();
+		    	// Wait for the channel to be set up, then notify the server that I am ready for a message.
+		    	setTimeout(function() {$.post('/' + room_name + '/game');}, 1000);
 			});
 		</script>
 		<style>
