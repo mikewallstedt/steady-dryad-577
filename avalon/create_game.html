@@ -17,6 +17,8 @@
 	    			var number_of_good_special = $('#good_special_fields').find(':checkbox:checked').length;
 	    			var number_of_evil_special = $('#evil_special_fields').find(':checkbox:checked').length;
 	    			var total_evil_number = Math.ceil(number_of_players / 3.0);
+	    			var merlin_checked = $('#merlin').is(':checked');
+	    			var assassin_checked = $('#assassin').is(':checked');
 	    			
 	    			if (number_of_players < 5) {
 	    				alert('Game requires at least 5 players');
@@ -29,6 +31,12 @@
 	    				return false;
 	    			} else if (total_evil_number < number_of_evil_special) {
 	    				alert('For ' + number_of_players + ' players there can be at most ' + total_evil_number + ' evil roles');
+	    				return false;
+	    			} else if (merlin_checked && !assassin_checked) {
+	    				alert('Cannot have merlin without the assassin');
+	    				return false;
+	    			} else if (!merlin_checked && assassin_checked) {
+	    				alert('Cannot have assassin without merlin');
 	    				return false;
 	    			}
 	    			return true;
@@ -49,15 +57,15 @@
 					<div class="ui-field-contain">
 					<fieldset data-role="controlgroup" id="good_special_fields">
 						<legend>Select special roles (good):</legend>
-						<input type="checkbox" name="merlin_role" id="merlin"><label for="merlin">Merlin</label>
+						<input type="checkbox" name="merlin_role" id="merlin" checked><label for="merlin">Merlin</label>
 						<input type="checkbox" name="percival_role" id="percival"><label for="percival">Percival</label>
 					</fieldset>
 					<fieldset data-role="controlgroup" id="evil_special_fields">
 						<legend>Select special roles (evil):</legend>
+						<input type="checkbox" name="assassin_role" id="assassin" checked><label for="assassin">Assassin</label>
 						<input type="checkbox" name="mordred_role" id="mordred"><label for="mordred">Mordred</label>
 						<input type="checkbox" name="morgana_role" id="morgana"><label for="morgana">Morgana</label>
 						<input type="checkbox" name="oberon_role" id="oberon"><label for="oberon">Oberon</label>
-						<input type="checkbox" name="assassin_role" id="assassin"><label for="assassin">Assassin</label>
 					</fieldset>
 					</div>
 					
@@ -65,7 +73,7 @@
 					<fieldset data-role="controlgroup" id="player_fields">
 						<legend>Select players:</legend>
 						{% for nickname in nicknames %}
-		  					<input type="checkbox" name="{{ nickname }}_name" id="{{ nickname }}_id">
+		  					<input type="checkbox" name="{{ nickname }}_name" id="{{ nickname }}_id" checked>
 		  					<label for="{{ nickname }}_id">{{ nickname }}</label>
 						{% endfor %}
 					</fieldset>
