@@ -150,16 +150,16 @@
 		    	}
 		    	
 		    	function onError() {
-		    		alert("ERROR");
+		    		//alert("ERROR");
 		    	}
 		    	
 		    	function onClose() {
-		    		alert("CLOSED");
+		    		//alert("CLOSED");
 		    	}
 
 		    	connectToChannel();
 		    	// Wait for the channel to be set up, then notify the server that I am ready for a message.
-		    	setTimeout(function() {$.post('/' + room_name + '/game');}, 1000);
+		    	setTimeout(function() {$.post('/' + room_name + '/game');}, 500);
 			});
 		</script>
 		<style>

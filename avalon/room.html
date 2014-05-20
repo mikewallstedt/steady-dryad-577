@@ -82,7 +82,7 @@
 
     	connectToChannel();
     	// Wait for the channel to be set up, then notify the server that I am ready for a message.
-    	setTimeout(function() {$.post('/' + room_name);}, 1000);
+    	setTimeout(function() {$.post('/' + room_name);}, 500);
     });
     </script>
     
@@ -105,8 +105,8 @@
 
 		<div data-role="main" class="ui-content">
 			<h2 id="status"></h2>
+			
 			<h3>List of users in this room:</h3>
-
 
 			<ul id="nicknames_list"></ul>
 
