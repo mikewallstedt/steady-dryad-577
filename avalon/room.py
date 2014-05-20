@@ -159,6 +159,20 @@ class GameDestroyPage(webapp2.RequestHandler):
         self.redirect('/' + room_name)
 
 
+class ClearTheRoomPage(webapp2.RequestHandler):
+    
+    @ndb.transactional
+    def post(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        room = model.Room.get(room_name)
+        if user in room.users and room.state == 'NO_GAME':
+            room.users = []
+            room.put()
+        return self.redirect('/' + room_name)
+
+
 class GamePage(webapp2.RequestHandler):
     
     def get(self, room_name):
@@ -403,6 +417,7 @@ class ChannelConnectedPage(webapp2.RequestHandler):
 
 application = webapp2.WSGIApplication([
     (r'/(\w+)', RoomPage),
+    (r'/(\w+)/clear_the_room', ClearTheRoomPage),
     (r'/(\w+)/create_game', GameCreatePage),
     (r'/(\w+)/cancel_create_game', CancelGameCreatePage),
     (r'/(\w+)/destroy_game', GameDestroyPage),

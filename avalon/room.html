@@ -105,7 +105,17 @@
   <body>
 	<div data-role="page">
 		<div data-role="header">
+			<a href="#options_panel" class="ui-btn ui-corner-all ui-shadow">Options</a>
 			<h1>Room: {{ room_name }}</h1>
+		</div>
+		
+		<div data-role="panel" id="options_panel">
+			<h2>Options</h2>
+			<form method="post" action="/{{ room_name }}/clear_the_room"
+				onsubmit="return confirm('Are you sure you want to clear the room?')"
+				data-ajax="false">
+				<input type="submit" data-icon="delete" data-inline="true" value="Clear the Room">
+			</form>
 		</div>
 
 		<div data-role="main" class="ui-content">
