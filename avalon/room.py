@@ -1,6 +1,7 @@
 import jinja2
 import os
 import logging
+import math
 import model
 import random
 import webapp2
@@ -93,16 +94,14 @@ class GameCreatePage(webapp2.RequestHandler):
         roles = []
         special_roles = []
         nicknames = []
-        evil_role_count = 0
         for arg in self.request.arguments():
             if arg.endswith('_role') and self.request.get(arg) == 'on':
                 special_roles.append(arg[:-len('_role')])
             elif arg.endswith('_name') and self.request.get(arg) == 'on':
                 nicknames.append(arg[:-len('_name')])
-            elif arg == 'evil_role_count':
-                evil_role_count = int(self.request.get(arg))
         
         evil_special_role_count = sum(1 for role in special_roles if role in model.EVIL_SPECIAL_ROLES)
+        evil_role_count = int(math.ceil(len(nicknames) / 3.0))
         if not GameCreatePage.validate_form(len(special_roles), evil_special_role_count, len(nicknames), evil_role_count):
             return self.redirect('/' + room_name)
         

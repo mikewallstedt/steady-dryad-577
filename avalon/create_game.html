@@ -9,7 +9,32 @@
 		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
 	    <script type="text/javascript" src="/_ah/channel/jsapi"></script>
-		<!-- TODO: Include a script to validate the form, suggest number of minions. -->
+	    <script>
+	    	$(document).ready(function() {
+	    		$('#create_game_form').off('submit');
+	    		$('#create_game_form').on('submit', function() {
+	    			var number_of_players = $('#player_fields').find(':checkbox:checked').length;
+	    			var number_of_good_special = $('#good_special_fields').find(':checkbox:checked').length;
+	    			var number_of_evil_special = $('#evil_special_fields').find(':checkbox:checked').length;
+	    			var total_evil_number = Math.ceil(number_of_players / 3.0);
+	    			
+	    			if (number_of_players < 5) {
+	    				alert('Game requires at least 5 players');
+	    				return false;
+	    			} else if (number_of_players > 10) {
+	    				alert('At most 10 players are allowed per game');
+	    				return false;
+	    			} else if (number_of_players < number_of_good_special + number_of_evil_special) {
+	    				alert('Too many special roles for the number of players');
+	    				return false;
+	    			} else if (total_evil_number < number_of_evil_special) {
+	    				alert('For ' + number_of_players + ' players there can be at most ' + total_evil_number + ' evil roles');
+	    				return false;
+	    			}
+	    			return true;
+	    		});
+	    	});
+	    </script>
 		<title>Avalon: Create game in room {{ room_name }}</title>
 	</head>
 	
@@ -22,30 +47,28 @@
 			<div data-role="main" class="ui-content">
 				<form method="post" action="/{{ room_name }}/create_game" id="create_game_form" data-ajax="false">
 					<div class="ui-field-contain">
-					<fieldset data-role="controlgroup">
-						<legend>Select special roles:</legend>
+					<fieldset data-role="controlgroup" id="good_special_fields">
+						<legend>Select special roles (good):</legend>
 						<input type="checkbox" name="merlin_role" id="merlin"><label for="merlin">Merlin</label>
+						<input type="checkbox" name="percival_role" id="percival"><label for="percival">Percival</label>
+					</fieldset>
+					<fieldset data-role="controlgroup" id="evil_special_fields">
+						<legend>Select special roles (evil):</legend>
 						<input type="checkbox" name="mordred_role" id="mordred"><label for="mordred">Mordred</label>
 						<input type="checkbox" name="morgana_role" id="morgana"><label for="morgana">Morgana</label>
 						<input type="checkbox" name="oberon_role" id="oberon"><label for="oberon">Oberon</label>
-						<input type="checkbox" name="percival_role" id="percival"><label for="percival">Percival</label>
 						<input type="checkbox" name="assassin_role" id="assassin"><label for="assassin">Assassin</label>
 					</fieldset>
 					</div>
 					
 					<div class="ui-field-contain">
-					<fieldset data-role="controlgroup">
+					<fieldset data-role="controlgroup" id="player_fields">
 						<legend>Select players:</legend>
 						{% for nickname in nicknames %}
 		  					<input type="checkbox" name="{{ nickname }}_name" id="{{ nickname }}_id">
 		  					<label for="{{ nickname }}_id">{{ nickname }}</label>
 						{% endfor %}
 					</fieldset>
-					</div>
-					
-					<div class="ui-field-contain">
-						<label for="evil_role_count">Number of evil players:</label>
-						<input type="number" name="evil_role_count" id="evil_role_count" placeholder="number of evil players">
 					</div>
 
 					<input type="submit" data-icon="check" data-inline="true" value="Create">

@@ -148,7 +148,8 @@
 		    			break;
 		    		}
 		    		
-		    		$('#create_team_proposal_form').submit(function() {
+		    		$('#create_team_proposal_form').off('submit');
+		    		$('#create_team_proposal_form').on('submit', function() {
 	 					var number_of_boxes_checked = $('#create_team_proposal_form').find(':checkbox:checked').length;
 	 					if (number_of_boxes_checked != info.team_size) {
 	 						alert('Team should consist of ' + info.team_size + ' members. You chose ' + number_of_boxes_checked);
