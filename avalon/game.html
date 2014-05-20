@@ -15,6 +15,7 @@
 		    	var vote_on_mission_success = $('#vote_on_mission_success');
 		    	var team_vote_results = $('#team_vote_results');
 		    	var mission_vote_results = $('#mission_vote_results');
+		    	var assassin_form = $('#assassin_form');
 		    
 		    	function connectToChannel() {
 				    var channel = new goog.appengine.Channel(token);
@@ -54,6 +55,15 @@
 		    		$('#proposals_failed').text('Proposals Failed this Round: ' + info.failed_proposal_count);
 		    	}
 		    	
+		    	function hideAllDivs() {
+		    		create_team_proposal.hide();
+    				vote_on_team_proposal.hide();
+    				vote_on_mission_success.hide();
+    				team_vote_results.hide();
+    				mission_vote_results.hide();
+    				assassin_form.hide();
+		    	}
+		    	
 		    	function onMessage(message) {
 		    		var info = $.parseJSON(message.data);
 		    		
@@ -61,10 +71,7 @@
 		    		
 		    		switch (info.round_state) {
 		    		case 'WAITING_FOR_TEAM_PROPOSAL':
-		    			vote_on_team_proposal.hide();
-		    			vote_on_mission_success.hide();
-		    			team_vote_results.hide();
-		    			mission_vote_results.hide();
+		    			hideAllDivs();
 		    			if (info.you_are_the_leader) {
 		    				status.text('You are the leader, please select a team of ' + info.team_size + ' players');
 		    				create_team_proposal.show();
@@ -73,10 +80,7 @@
 		    			}
 		    			break;
 		    		case 'VOTING_ON_TEAM':
-		    			create_team_proposal.hide();
-		    			vote_on_mission_success.hide();
-		    			team_vote_results.hide();
-		    			mission_vote_results.hide();
+		    			hideAllDivs();
 		    			if (info.already_voted_on_team) {
 		    				status.text('Waiting for others to vote on the team');
 		    				vote_on_team_proposal.hide();
@@ -87,10 +91,7 @@
 		    			}
 		    			break;
 		    		case 'TEAM_VOTE_RESULTS':
-		    			create_team_proposal.hide();
-		    			vote_on_team_proposal.hide();
-		    			vote_on_mission_success.hide();
-		    			mission_vote_results.hide();
+		    			hideAllDivs();
 		    			if (info.already_acknowledged_team_vote) {
 		    				status.text('Waiting for other users to acknowledge seeing results');
 		    				team_vote_results.hide();
@@ -101,10 +102,7 @@
 		    			}
 		    			break;
 		    		case 'MISSION_IN_PROGRESS':
-		    			create_team_proposal.hide();
-		    			vote_on_team_proposal.hide();
-		    			team_vote_results.hide();
-		    			mission_vote_results.hide();
+		    			hideAllDivs();
 		    			if (info.you_are_on_the_team && !info.already_voted_on_mission) {
 		    				status.text('Please vote on the success of the mission');
 		    				vote_on_mission_success.show();
@@ -114,10 +112,7 @@
 		    			}
 		    			break;
 		    		case 'MISSION_OVER':
-		    			create_team_proposal.hide();
-		    			vote_on_team_proposal.hide();
-		    			team_vote_results.hide();
-		    			vote_on_mission_success.hide();
+		    			hideAllDivs();
 		    			if (info.already_acknowledged_mission_vote) {
 		    				status.text('Waiting for other users to acknowledge seeing results');
 		    				mission_vote_results.hide();
@@ -130,19 +125,22 @@
 		    			}
 		    			break;
 		    		case 'CLEANUP':
-		    			create_team_proposal.hide();
-	    				vote_on_team_proposal.hide();
-	    				vote_on_mission_success.hide();
-	    				team_vote_results.hide();
-	    				mission_vote_results.hide();
-	    				status.text('GAME OVER')
+		    			hideAllDivs();
+		    			if (info.assassin_present && info.merlin_present) {
+		    				if (info.assassin_done) {
+		    					status.text('GAME OVER: assassin ' + (info.assassin_correct ? 'killed' : 'failed to kill') + ' merlin');
+		    				} else {
+		    					status.text('Waiting for assassin');
+		    					if (info.you_are_the_assassin) {
+		    						assassin_form.show();
+		    					}
+		    				}
+		    			} else {
+	    					status.text('GAME OVER')
+		    			}
 		    			break;
 		    		default:
-		    			create_team_proposal.hide();
-	    				vote_on_team_proposal.hide();
-	    				vote_on_mission_success.hide();
-	    				team_vote_results.hide();
-	    				mission_vote_results.hide();
+		    			hideAllDivs();
 		    			status.text('Something bad has happened. Maybe try to re-enter the room.')
 		    			break;
 		    		}
@@ -176,6 +174,9 @@
 				display: none;
 			}
 			#mission_vote_results {
+				display: none;
+			}
+			#assassin_form {
 				display: none;
 			}
 		</style>
@@ -305,6 +306,19 @@
 					<!-- JavaScript will put the results here. -->
 				</ul>
 				<input type="submit" value="Acknowledge">
+			</form>
+		</div>
+		
+		<div id="assassin_form">
+			<h2>You are the assassin. Choose a target.</h2>
+			<form method="post" action="/{{ room_name }}/assassin">
+				{% for identity in identities %}
+  					<li>
+  						<input type="radio" name="assassin_target" value="{{ identity[0] }}" id="{{ identity[0] }}_id">
+  						<label for="{{ identity[0] }}_id">{{ identity[0] }}</label>
+  					</li>
+				{% endfor %}
+				<input type="submit" value="Attempt Assassination">
 			</form>
 		</div>
 		

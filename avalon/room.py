@@ -331,14 +331,8 @@ class AcknowledgeMissionVoteResults(webapp2.RequestHandler):
         if not room.game.round.mission_vote_acknowledgers:
             room.game.round.mission_vote_acknowledgers = []
             
-        import logging
-        logging.critical(room.game.round.mission_vote_acknowledgers)
-        
         if user not in room.game.round.mission_vote_acknowledgers:
             room.game.round.mission_vote_acknowledgers.append(user)
-        
-        logging.critical(room.game.round.mission_vote_acknowledgers)
-        logging.critical(room.game.players)
         
         if len(room.game.round.mission_vote_acknowledgers) == len(room.game.players):
             if room.game.round_number == len(model.MISSION_PARAMETERS[len(room.game.players)]) - 1:
@@ -349,6 +343,41 @@ class AcknowledgeMissionVoteResults(webapp2.RequestHandler):
                 room.game.leader_index %= len(room.game.players)
                 room.game.round = model.Round()
         room.put()
+        return self.redirect('/' + room_name)
+
+
+class AssassinPage(webapp2.RequestHandler):
+    
+    def post(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        
+        room = model.Room.get(room_name)
+        user_is_assassin = False
+        for assignment in room.game.assignments:
+            if user == assignment.user and 'assassin' == assignment.role:
+                user_is_assassin = True
+                break
+        if not room.game or room.game.round.state != 'CLEANUP' or 'merlin' not in room.game.roles or not user_is_assassin:
+            return self.redirect('/' + room_name)
+        
+        assassin_target = self.request.get('assassin_target')
+        import logging
+        logging.critical('target = ' + assassin_target)
+        merlin_nickname = None
+        for assignment in room.game.assignments:
+            if assignment.role == 'merlin':
+                merlin_nickname = assignment.user.nickname()
+        logging.critical('merlin_nickname = ' + merlin_nickname)
+        
+        if assassin_target == merlin_nickname:
+            room.game.assassin_correct = True
+        else:
+            room.game.assassin_correct = False
+        room.game.assassin_done = True
+        room.put()
+        room.game.notify_all()
         return self.redirect('/' + room_name)
 
 
@@ -363,6 +392,7 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/acknowledge_team_vote_results', AcknowledgeTeamVoteResults),
     (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess),
     (r'/(\w+)/acknowledge_mission_vote_results', AcknowledgeMissionVoteResults),
+    (r'/(\w+)/assassin', AssassinPage)
     ],
     debug=True)
 

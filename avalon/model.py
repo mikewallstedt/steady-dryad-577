@@ -4,7 +4,7 @@ from google.appengine.api import channel
 from google.appengine.ext import ndb
 
 GOOD_SPECIAL_ROLES = ['merlin', 'percival']
-EVIL_SPECIAL_ROLES = ['mordred', 'morgana', 'oberon']
+EVIL_SPECIAL_ROLES = ['mordred', 'morgana', 'oberon', 'assassin']
 SPECIAL_ROLES = [role for group in (GOOD_SPECIAL_ROLES, EVIL_SPECIAL_ROLES) for role in group]
 EVIL_ROLES = [role for group in (EVIL_SPECIAL_ROLES, ['minion']) for role in group]
 GOOD_ROLES = [role for group in (GOOD_SPECIAL_ROLES, ['loyal']) for role in group]
@@ -64,6 +64,8 @@ class Game(ndb.Model):
     leader_index = ndb.IntegerProperty(default=0)
     round_number = ndb.IntegerProperty(default=0)
     round = ndb.StructuredProperty(Round, default=Round())
+    assassin_done = ndb.BooleanProperty(default=False)
+    assassin_correct = ndb.BooleanProperty()
     
     def includes_user(self, user):
         return user in self.players
@@ -88,7 +90,11 @@ class Game(ndb.Model):
                    'team_size': MISSION_PARAMETERS[len(self.players)][self.round_number][0],
                    'leader': self.players[self.leader_index].nickname(),
                    'mission_fail_votes': self.round.mission_failure_vote_count(),
-                   'round_description': self.round.description}
+                   'round_description': self.round.description,
+                   'assassin_done': self.assassin_done,
+                   'assassin_correct': self.assassin_correct,
+                   'assassin_present': 'assassin' in self.roles,
+                   'merlin_present': 'merlin' in self.roles}
         
         if self.round.state == 'TEAM_VOTE_RESULTS':
             message['team_proposal_votes'] = [[v.user.nickname(), v.vote] for v in self.round.team_proposal_votes]
@@ -123,6 +129,13 @@ class Game(ndb.Model):
             if user in self.round.mission_vote_acknowledgers:
                 already_acknowledged_mission_vote = True
             message['already_acknowledged_mission_vote'] = already_acknowledged_mission_vote
+            
+            you_are_the_assassin = False
+            for assignment in self.assignments:
+                if assignment.user == user and assignment.role == 'assassin':
+                    you_are_the_assassin = True
+                    break
+            message['you_are_the_assassin'] = you_are_the_assassin
 
             channel.send_message(self.get_client_id(user), json.dumps(message))
     
