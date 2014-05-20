@@ -98,6 +98,9 @@ class Game(ndb.Model):
                    'assassin_present': 'assassin' in self.roles,
                    'merlin_present': 'merlin' in self.roles}
         
+        if self.round.state in ('MISSION_IN_PROGRESS', 'MISSION_OVER'):
+            message['team'] = self.round.team
+        
         if self.round.state == 'TEAM_VOTE_RESULTS':
             message['team_proposal_votes'] = [[v.user.nickname(), v.vote] for v in self.round.team_proposal_votes]
         

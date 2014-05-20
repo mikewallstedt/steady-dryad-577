@@ -17,6 +17,7 @@
 		    	var create_team_proposal = $('#create_team_proposal');
 		    	var vote_on_team_proposal = $('#vote_on_team_proposal');
 		    	var vote_on_mission_success = $('#vote_on_mission_success');
+		    	var team_display = $('#team_display');
 		    	var team_vote_results = $('#team_vote_results');
 		    	var mission_vote_results = $('#mission_vote_results');
 		    	var assassin_form = $('#assassin_form');
@@ -52,10 +53,10 @@
 		    	}
 		    	
 		    	function updateBasicInfo(info) {
-		    		$('#round').text('Round: ' + (info.round_number + 1));
-		    		$('#leader').text('Leader: ' + info.leader);
-		    		$('#missions_failed').text('Number of Missions Failed: ' + info.failed_mission_count);
-		    		$('#proposals_failed').text('Failed Proposals Remaining this Round: ' + info.proposals_remaining_count);
+		    		$('#round').text(info.round_number + 1);
+		    		$('#missions_failed').text(info.failed_mission_count);
+		    		$('#leader').text(info.leader);
+		    		$('#failed_proposals_remaining').text(info.proposals_remaining_count);
 		    	}
 		    	
 		    	function hideAllDivs() {
@@ -63,8 +64,19 @@
     				vote_on_team_proposal.hide();
     				vote_on_mission_success.hide();
     				team_vote_results.hide();
+    				team_display.hide();
     				mission_vote_results.hide();
     				assassin_form.hide();
+		    	}
+		    	
+		    	function displayTeam(info) {
+		    		$('#team_display_list').empty();
+		    		$.each(info.team, function(index, value){
+		    			$('#team_display_list').append($('<li>' + value + '</li>'));
+		    		});
+		    		if (info.team.length > 0) {
+	    				team_display.show();
+		    		}
 		    	}
 		    	
 		    	function onMessage(message) {
@@ -106,6 +118,8 @@
 		    			break;
 		    		case 'MISSION_IN_PROGRESS':
 		    			hideAllDivs();
+		    			displayTeam(info);
+		    			team_display.show();
 		    			if (info.you_are_on_the_team && !info.already_voted_on_mission) {
 		    				status.text('Please vote on the success of the mission');
 		    				vote_on_mission_success.show();
@@ -116,6 +130,7 @@
 		    			break;
 		    		case 'MISSION_OVER':
 		    			hideAllDivs();
+		    			displayTeam(info);
 		    			if (info.already_acknowledged_mission_vote) {
 		    				status.text('Waiting for other users to acknowledge seeing results');
 		    				mission_vote_results.hide();
@@ -194,24 +209,41 @@
 			#assassin_form {
 				display: none;
 			}
+			
+			th {
+				border-bottom: 1px solid #d6d6d6;
+			}
+			tr:nth-child(even) {
+				background:#e9e9e9;
+			}
 		</style>
 	</head>
 	
 	<body>
 		<div data-role="page">
-			<div data-role="header">
-				<h1>Role: {{role}}</h1>
-			</div>
 
 			<div data-role="main" class="ui-content">
+				<h2>Your Role</h2>
+				<p>{{ role }}</p>
 			
-				<h2>Info</h2>
-				<ul>
-					<li id="round"></li>
-					<li id="leader"></li>
-					<li id="missions_failed"></li>
-					<li id="proposals_failed"></li>
-				</ul>
+				<h2>Game Progress</h2>
+				<table>
+					<thead>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Current Round</td> <td id="round"></td>
+						</tr>
+						<tr>
+							<td>Number of Missions Failed</td> <td id="missions_failed"></td>
+						</tr>
+						<tr>
+							<td>Current Leader</td> <td id="leader"></td>
+						</tr>
+							<td>Failed Proposals Remaining, this Round</td> <td id="failed_proposals_remaining"></td>
+						</tr>
+					</tbody>
+				</table>
 				
 				<h2>All Roles in Play</h2>
 				<ul>
@@ -221,16 +253,18 @@
 				</ul>
 				
 				<h2>All Players in Game</h2>
-				<table>
+				<table data-role="table class="ui-responsive ui-shadow"">
 					<thead>
 						<tr>
+							<th>Leader Order</th>
 							<th>Player</th>
-							<th>Role</th>
+							<th>Info</th>
 						</tr>
 					</thead>
 					<tbody>
 						{% for identity in identities %}
 		  					<tr>
+		  						<td>{{ loop.index }}</td>
 		  						<td>{{ identity[0] }}</td>
 		  						<td>{{ identity[1] }}</td>
 		  					</tr>
@@ -247,7 +281,7 @@
 							<th>Number to Fail</th>
 						</tr>
 					</thead>
-					<tbody>
+					<tbody id="team_size_by_round">
 						{% for info in round_counts %}
 							<tr>
 								<td>{{ loop.index }}</td>
@@ -257,6 +291,13 @@
 						{% endfor %}
 					</tbody>
 				</table>
+				
+				<div id="team_display">
+					<h2>Current Team</h2>
+					<ul id="team_display_list">
+						<!-- JavaScript will put the results here. -->
+					</ul>
+				</div>
 				
 				<h2 id="status_message"></h2>
 				

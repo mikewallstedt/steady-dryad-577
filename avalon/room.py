@@ -289,6 +289,7 @@ class AcknowledgeTeamVoteResults(webapp2.RequestHandler):
             else:
                 if room.game.round.failed_proposal_count > model.MAX_FAILED_PROPOSAL_COUNT:
                     room.game.round.description = 'Mission failed because we could not agree on a team.'
+                    room.game.round.team = []
                     room.game.round.state = 'MISSION_OVER'
                 else:
                     room.game.round.state = 'WAITING_FOR_TEAM_PROPOSAL'
