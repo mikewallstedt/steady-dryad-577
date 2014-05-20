@@ -26,7 +26,7 @@
     	}
     	
     	function onOpened() {
-    		// Do nothing.
+    		$.post('/' + room_name);
     	}
     	
     	function onMessage(message) {
@@ -35,6 +35,13 @@
     		var create_form = $('#create_form');
     		var join_form = $('#join_form');
     		var nicknames_list = $('#nicknames_list');
+    		
+    		if (info.connected) {
+    			// Server is telling me the connection is established.
+    			// I am asking it to use the connection to send me more info.
+    			$.post('/' + room_name);
+    			return
+    		}
     		
     		switch (info.room_state) {
     		case 'NO_GAME':
@@ -81,8 +88,6 @@
     	}
 
     	connectToChannel();
-    	// Wait for the channel to be set up, then notify the server that I am ready for a message.
-    	setTimeout(function() {$.post('/' + room_name);}, 1000);
     });
     </script>
     

@@ -1,5 +1,6 @@
 import jinja2
 import os
+import json
 import logging
 import math
 import model
@@ -393,6 +394,13 @@ class AssassinPage(webapp2.RequestHandler):
         return self.redirect('/' + room_name)
 
 
+class ChannelConnectedPage(webapp2.RequestHandler):
+    
+    def post(self):
+        client_id = self.request.get('from')
+        channel.send_message(client_id, json.dumps({'connected': True}))
+
+
 application = webapp2.WSGIApplication([
     (r'/(\w+)', RoomPage),
     (r'/(\w+)/create_game', GameCreatePage),
@@ -404,7 +412,8 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/acknowledge_team_vote_results', AcknowledgeTeamVoteResults),
     (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess),
     (r'/(\w+)/acknowledge_mission_vote_results', AcknowledgeMissionVoteResults),
-    (r'/(\w+)/assassin', AssassinPage)
+    (r'/(\w+)/assassin', AssassinPage),
+    (r'/_ah/channel/connected/', ChannelConnectedPage)
     ],
     debug=True)
 

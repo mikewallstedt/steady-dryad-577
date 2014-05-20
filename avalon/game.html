@@ -33,7 +33,7 @@
 		    	}
 		    	
 		    	function onOpened() {
-		    		// Do nothing.
+		    		$.post('/' + room_name + '/game');
 		    	}
 		    	
 		    	function populateTeamProposal(team) {
@@ -82,6 +82,13 @@
 		    	
 		    	function onMessage(message) {
 		    		var info = $.parseJSON(message.data);
+		    		
+		    		if (info.connected) {
+		    			// Server is telling me the connection is established.
+		    			// I am asking it to use the connection to send me more info.
+		    			$.post('/' + room_name + '/game');
+		    			return
+		    		}
 		    		
 		    		updateBasicInfo(info);
 		    		
@@ -184,8 +191,6 @@
 		    	}
 
 		    	connectToChannel();
-		    	// Wait for the channel to be set up, then notify the server that I am ready for a message.
-		    	setTimeout(function() {$.post('/' + room_name + '/game');}, 1000);
 			});
 		</script>
 		<style>
