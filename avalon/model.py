@@ -161,8 +161,6 @@ class Game(ndb.Model):
         for identity in identities:
             if identity[1] not in ('me', ''):
                 players_seen.append(identity[0])
-        import logging
-        logging.critical(repr(players_seen))
         return players_seen
 
     def get_identities(self, user):
