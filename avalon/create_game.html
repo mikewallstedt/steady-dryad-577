@@ -55,6 +55,16 @@
 			<div data-role="main" class="ui-content">
 				<form method="post" action="/{{ room_name }}/create_game" id="create_game_form" data-ajax="false">
 					<div class="ui-field-contain">
+					<fieldset data-role="controlgroup" id="setup_only_fields">
+						<legend>Select mode:</legend>
+						<input type="radio" name="setup_only" value="no" id="setup_only_no" checked>
+						<label for="setup_only_no">Play entire game</label>
+						<input type="radio" name="setup_only" value="yes" id="setup_only_yes">
+						<label for="setup_only_yes">Only perform the game setup and conclusion</label>
+					</fieldset>
+					</div>
+
+					<div class="ui-field-contain">
 					<fieldset data-role="controlgroup" id="good_special_fields">
 						<legend>Select special roles (good):</legend>
 						<input type="checkbox" name="merlin_role" id="merlin" checked><label for="merlin">Merlin</label>
@@ -79,9 +89,6 @@
 					</fieldset>
 					</div>
 					
-					<input type="checkbox" name="setup_only" id="setup_only">
-					<label for="setup_only">Only perform the game setup</label>
-
 					<input type="submit" data-icon="check" data-inline="true" value="Create">
 				</form>
 				<form method="post" action="/{{ room_name }}/cancel_create_game" data-ajax="false">

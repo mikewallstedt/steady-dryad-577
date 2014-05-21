@@ -133,7 +133,7 @@ class GameCreatePage(webapp2.RequestHandler):
         if len(roles) not in model.MISSION_PARAMETERS:
             return self.redirect('/' + room_name)
         
-        setup_only = (self.request.get('setup_only') == 'on')
+        setup_only = (self.request.get('setup_only') == 'yes')
         room.create_game(players=players, roles=roles, assignments=assignments, setup_only=setup_only)
         room.put()
         room.notify_all()
