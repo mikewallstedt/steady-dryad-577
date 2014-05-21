@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+    <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+    <script>
+			$(document).ready(function() {
+				var room_name = '{{room_name}}';
+		    	var token = '{{ token }}';
+		    	var status = $('#status_message');
+		    	var game_end_form = $('#game_end_form');
+		    	var assignments_display = $('#assignments_display');
+		    	
+		    	function connectToChannel() {
+				    var channel = new goog.appengine.Channel(token);
+				    var socket = channel.open();
+				    
+				    socket.onopen = onOpened;
+				    socket.onmessage = onMessage;
+				    socket.onerror = onError;
+				    socket.onclose = onClose;    	
+		    	}
+		    	
+		    	function onOpened() {
+		    		$.post('/' + room_name + '/game');
+		    	}
+		    	
+		    	function hideAllDivs() {
+		    		game_end_form.hide();
+		    		assignments_display.hide();
+		    	}
+		    	
+		    	function onMessage(message) {
+		    		var info = $.parseJSON(message.data);
+		    		
+		    		if (info.connected) {
+		    			// Server is telling me the connection is established.
+		    			// I am asking it to use the connection to send me more info.
+		    			$.post('/' + room_name + '/game');
+		    			return
+		    		}
+		    		
+		    		hideAllDivs();
+		    		
+		    		if (info.assignments) {
+		    			$('#assignment_display_list').empty();
+		    			$.each(info.assignments, function(index, value){
+		    				$('#assignment_display_list').append('<tr><td>' + value[0] + '</td><td>' + value[1] + '</td></tr>');
+		    			});
+		    			status.text('GAME OVER');
+		    			assignments_display.show();
+		    		} else if (info.already_requested_end) {
+		    			status.text('Waiting for other players to request game end');
+		    		} else {
+		    			game_end_form.show();
+		    		}
+		    	}
+		    	
+		    	function onError() {
+		    		//alert("ERROR");
+		    	}
+		    	
+		    	function onClose() {
+		    		//alert("CLOSED");
+		    	}
+
+		    	connectToChannel();
+			});
+		</script>
+		
+		<style>
+			#game_end_form {
+				display: none;
+			}
+			#assignments_display {
+				display: none;
+			}
+		</style>
+    
+	<title>Avalon: {{room_name}} Game</title>
+</head>
+<body>
+
+		<div data-role="page">
+		
+			<div data-role="header">
+			    <a href="#options_panel" class="ui-btn ui-corner-all ui-shadow">Options</a>
+			    <h1>Game On</h1>
+			 </div>
+
+			<div data-role="main" class="ui-content">
+				<h2>Your Role</h2>
+				<p>{{ role }}</p>
+				
+				<h2>All Roles in Play</h2>
+				<ul>
+					{% for role in all_roles %}
+		  				<li>{{ role }}</li>
+					{% endfor %}
+				</ul>
+				
+				{% if players_seen %}
+					<h2>Players You Can See</h2>
+					<ul>
+						{% for player in players_seen %}
+							<li>{{ player }}</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+				
+				<h2>Team Size by Round</h2>
+				<table>
+					<thead>
+						<tr>
+							<th>Round</th>
+							<th>Team Size</th>
+							<th>Number to Fail</th>
+						</tr>
+					</thead>
+					<tbody id="team_size_by_round">
+						{% for info in round_counts %}
+							<tr>
+								<td>{{ loop.index }}</td>
+								<td>{{ info[0] }}</td>
+								<td>{{ info[1] }}</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				
+				<div id="assignments_display">
+					<h2>Assignments were as follows</h2>
+					<table>
+						<thead>
+							<tr>
+								<th>Player</th>
+								<th>Role</th>
+							<tr>
+						</thead>
+						<tbody id="assignment_display_list">
+							<!-- JavaScript will put the results here. -->
+						</tbody>
+					</table>
+				</div>
+				
+				<h2 id="status_message"></h2>
+				
+				<div id="game_end_form">
+					<form method="post" action="/{{ room_name }}/request_end" data-ajax="false">
+						<input type="submit" data-inline="true" value="Allow Game to End">
+					</form>
+				</div>
+			</div>
+			
+			<div data-role="panel" id="options_panel">
+   				<h2>Options</h2>
+				<form method="post" action="/{{ room_name }}/destroy_game"
+					onsubmit="return confirm('Are you sure you want to destroy the game?')"
+					data-ajax="false">
+					<input type="submit" data-icon="delete" data-inline="true" value="Destroy Game">
+				</form>
+			</div>
+		</div>
+
+</body>
+</html>

@@ -55,9 +55,11 @@ class Round(ndb.Model):
 
 class Game(ndb.Model):
     room_name = ndb.StringProperty(required=True)
+    setup_only = ndb.BooleanProperty(required=True)
     players = ndb.UserProperty(repeated=True)
     roles = ndb.StringProperty(choices=ROLES, repeated=True)
     assignments = ndb.StructuredProperty(RoleAssignment, repeated=True)
+    end_requesters = ndb.UserProperty(repeated=True)
 
     failed_mission_count = ndb.IntegerProperty(default=0)
     leader_index = ndb.IntegerProperty(default=0)
@@ -82,6 +84,7 @@ class Game(ndb.Model):
         proposals_remaining = MAX_FAILED_PROPOSAL_COUNT - self.round.failed_proposal_count
         if proposals_remaining < 0:
             proposals_remaining = 'Caused mission failure'
+        
         message = {'failed_mission_count': self.failed_mission_count,
                    'leader_index': self.leader_index,
                    'round_number': self.round_number,
@@ -97,6 +100,9 @@ class Game(ndb.Model):
                    'assassin_correct': self.assassin_correct,
                    'assassin_present': 'assassin' in self.roles,
                    'merlin_present': 'merlin' in self.roles}
+        
+        if len(self.players) == len(self.end_requesters):
+            message['assignments'] = [[a.user.nickname(), a.role] for a in self.assignments]
         
         if self.round.state in ('MISSION_IN_PROGRESS', 'MISSION_OVER'):
             message['team'] = self.round.team
@@ -141,9 +147,24 @@ class Game(ndb.Model):
                     you_are_the_assassin = True
                     break
             message['you_are_the_assassin'] = you_are_the_assassin
+            
+            already_requested_end = False
+            if user in self.end_requesters:
+                already_requested_end = True
+            message['already_requested_end'] = already_requested_end
 
             channel.send_message(self.get_client_id(user), json.dumps(message))
     
+    def get_players_seen(self, user):
+        players_seen = []
+        identities = self.get_identities(user)
+        for identity in identities:
+            if identity[1] not in ('me', ''):
+                players_seen.append(identity[0])
+        import logging
+        logging.critical(repr(players_seen))
+        return players_seen
+
     def get_identities(self, user):
         me = self.get_role(user)
         identities = []
@@ -255,8 +276,8 @@ class Room(ndb.Model):
         if user in self.users:
             self.users.remove(user)
     
-    def create_game(self, players, roles, assignments):
-        self.game = Game(room_name=self.get_name(), players=players, roles=roles, assignments=assignments)
+    def create_game(self, players, roles, assignments, setup_only=False):
+        self.game = Game(room_name=self.get_name(), players=players, roles=roles, assignments=assignments, setup_only=setup_only)
         self.state = 'GAME_IN_PROGRESS'
     
 @ndb.transactional

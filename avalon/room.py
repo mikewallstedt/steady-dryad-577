@@ -133,7 +133,8 @@ class GameCreatePage(webapp2.RequestHandler):
         if len(roles) not in model.MISSION_PARAMETERS:
             return self.redirect('/' + room_name)
         
-        room.create_game(players=players, roles=roles, assignments=assignments)
+        setup_only = (self.request.get('setup_only') == 'on')
+        room.create_game(players=players, roles=roles, assignments=assignments, setup_only=setup_only)
         room.put()
         room.notify_all()
         return self.redirect('/' + room_name)
@@ -184,6 +185,9 @@ class GamePage(webapp2.RequestHandler):
         if not room.game or not user in room.game.players:
             return self.redirect('/' + room_name)
         
+        if room.game.setup_only:
+            return self.redirect('/' + room_name + '/setup_only_game')
+        
         token = channel.create_channel(room.game.get_client_id(user))
         
         template_values = {'room_name': room_name,
@@ -200,6 +204,33 @@ class GamePage(webapp2.RequestHandler):
         room = model.Room.get(room_name)
         if room.game:
             room.game.notify_all()
+
+
+class SetupOnlyGamePage(webapp2.RequestHandler):
+    
+    def get(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        
+        room = model.Room.get(room_name)
+        if not room.game or not user in room.game.players:
+            return self.redirect('/' + room_name)
+        
+        if not room.game.setup_only:
+            return self.redirect('/' + room_name + '/game')
+        
+        token = channel.create_channel(room.game.get_client_id(user))
+        
+        template_values = {'room_name': room_name,
+                           'token': token,
+                           'role': room.game.get_role(user),
+                           'players_seen': room.game.get_players_seen(user),
+                           'all_roles': room.game.roles,
+                           'round_counts': model.MISSION_PARAMETERS[len(room.game.players)]}
+        
+        template = JINJA_ENVIRONMENT.get_template('setup_only_game.html')
+        self.response.write(template.render(template_values))
 
     
 class SubmitTeamProposalPage(webapp2.RequestHandler):
@@ -408,6 +439,24 @@ class AssassinPage(webapp2.RequestHandler):
         return self.redirect('/' + room_name)
 
 
+class RequestEndPage(webapp2.RequestHandler):
+    
+    @ndb.transactional
+    def post(self, room_name):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+        
+        room = model.Room.get(room_name)
+        if not room.game or not room.game.setup_only or not user in room.game.players:
+            return self.redirect('/' + room_name)
+        
+        if user not in room.game.end_requesters:
+            room.game.end_requesters.append(user)
+        room.put()
+        return self.redirect('/' + room_name)
+        
+
 class ChannelConnectedPage(webapp2.RequestHandler):
     
     def post(self):
@@ -422,12 +471,14 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/cancel_create_game', CancelGameCreatePage),
     (r'/(\w+)/destroy_game', GameDestroyPage),
     (r'/(\w+)/game', GamePage),
+    (r'/(\w+)/setup_only_game', SetupOnlyGamePage),
     (r'/(\w+)/submit_team_proposal', SubmitTeamProposalPage),
     (r'/(\w+)/vote_on_team_proposal', VoteOnTeamProposal),
     (r'/(\w+)/acknowledge_team_vote_results', AcknowledgeTeamVoteResults),
     (r'/(\w+)/vote_on_mission_success', VoteOnMissionSuccess),
     (r'/(\w+)/acknowledge_mission_vote_results', AcknowledgeMissionVoteResults),
     (r'/(\w+)/assassin', AssassinPage),
+    (r'/(\w+)/request_end', RequestEndPage),
     (r'/_ah/channel/connected/', ChannelConnectedPage)
     ],
     debug=True)
