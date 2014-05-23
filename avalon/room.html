@@ -5,9 +5,13 @@
   <head>
   	<meta charset="UTF-8">
   	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+  	
+  	<link rel="stylesheet" href="/static/themes/greenish.min.css" />
+	<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+  	
     <script type="text/javascript" src="/_ah/channel/jsapi"></script>
     
     <script>
@@ -77,6 +81,7 @@
     		$.each(info.nicknames_present, function(index, value) {
     			nicknames_list.append($('<li>').text(value));
     		});
+    		nicknames_list.listview("refresh");
     	}
     	
     	function onError() {
@@ -103,8 +108,8 @@
     <title>Avalon Room: {{ room_name }}</title>
   </head>
   <body>
-	<div data-role="page">
-		<div data-role="header">
+	<div data-role="page" data-theme="a">
+		<div data-role="header" data-theme="a">
 			<a href="#options_panel" class="ui-btn ui-corner-all ui-shadow">Options</a>
 			<h1>Room: {{ room_name }}</h1>
 		</div>
@@ -123,7 +128,9 @@
 			
 			<h3>List of users in this room:</h3>
 
-			<ul id="nicknames_list"></ul>
+			<ul id="nicknames_list" data-role="listview" data-inset="true" class="ui-listview ui-group-theme-a" data-theme="a">
+				<!-- JavaScript populates this list. -->
+			</ul>
 
 			<form id="create_form" method="get"
 				action="/{{ room_name }}/create_game" data-ajax="false">

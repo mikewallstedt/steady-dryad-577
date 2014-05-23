@@ -3,9 +3,13 @@
 <head>
 	<meta charset="UTF-8">
   	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+	
+	<link rel="stylesheet" href="/static/themes/greenish.min.css" />
+	<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+    
     <script type="text/javascript" src="/_ah/channel/jsapi"></script>
     <script>
 			$(document).ready(function() {
@@ -94,10 +98,12 @@
 
 			<div data-role="main" class="ui-content">
 				<h2>Your Role</h2>
-				<p>{{ role }}</p>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<h3>{{ role }}</h3>
+				</div>
 				
 				<h2>All Roles in Play</h2>
-				<ul>
+				<ul data-role="listview" data-inset="true">
 					{% for role in all_roles %}
 		  				<li>{{ role }}</li>
 					{% endfor %}
@@ -105,7 +111,7 @@
 				
 				{% if players_seen %}
 					<h2>Players You Can See</h2>
-					<ul>
+					<ul data-role="listview" data-inset="true">
 						{% for player in players_seen %}
 							<li>{{ player }}</li>
 						{% endfor %}
@@ -113,41 +119,45 @@
 				{% endif %}
 				
 				<h2>Team Size by Round</h2>
-				<table>
-					<thead>
-						<tr>
-							<th>Round</th>
-							<th>Team Size</th>
-							<th>Number to Fail</th>
-						</tr>
-					</thead>
-					<tbody id="team_size_by_round">
-						{% for info in round_counts %}
-							<tr>
-								<td>{{ loop.index }}</td>
-								<td>{{ info[0] }}</td>
-								<td>{{ info[1] }}</td>
-							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-				
-				<div id="assignments_display">
-					<h2>Assignments were as follows</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
 					<table>
 						<thead>
 							<tr>
-								<th>Player</th>
-								<th>Role</th>
-							<tr>
+								<th>Round</th>
+								<th>Team Size</th>
+								<th>Number to Fail</th>
+							</tr>
 						</thead>
-						<tbody id="assignment_display_list">
-							<!-- JavaScript will put the results here. -->
+						<tbody id="team_size_by_round">
+							{% for info in round_counts %}
+								<tr>
+									<td>{{ loop.index }}</td>
+									<td>{{ info[0] }}</td>
+									<td>{{ info[1] }}</td>
+								</tr>
+							{% endfor %}
 						</tbody>
 					</table>
 				</div>
 				
-				<h2 id="status_message"></h2>
+				<div id="assignments_display">
+					<h2>Assignments were as follows</h2>
+					<div class="ui-body ui-body-a ui-corner-all">
+						<table>
+							<thead>
+								<tr>
+									<th>Player</th>
+									<th>Role</th>
+								<tr>
+							</thead>
+							<tbody id="assignment_display_list">
+								<!-- JavaScript will put the results here. -->
+							</tbody>
+						</table>
+					</div>
+				</div>
+				
+				<h2 id="status_message" class="ui-bar ui-bar-a ui-corner-all"></h2>
 				
 				<div id="game_end_form">
 					<form method="post" action="/{{ room_name }}/request_end" data-ajax="false">

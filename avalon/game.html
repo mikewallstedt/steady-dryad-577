@@ -3,9 +3,13 @@
 	<head>
 		<meta charset="UTF-8">
 	  	<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
+	  	
+	  	<link rel="stylesheet" href="/static/themes/greenish.min.css" />
+		<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
 		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+	  	
 	    <script type="text/javascript" src="/_ah/channel/jsapi"></script>
 		<title>Avalon: {{room_name}} Game</title>
 		
@@ -42,6 +46,7 @@
 		    		$.each(team, function(index, value) {
 		    			team_proposal_list.append($('<li>' + value + '</li>'));
 		    		});
+		    		team_proposal_list.listview("refresh");
 		    	}
 		    	
 		    	function populateTeamVoteResults(team_proposal_votes) {
@@ -75,6 +80,7 @@
 		    		$.each(info.team, function(index, value){
 		    			$('#team_display_list').append($('<li>' + value + '</li>'));
 		    		});
+		    		$('#team_display_list').listview("refresh");
 		    		if (info.team.length > 0) {
 	    				team_display.show();
 		    		}
@@ -147,6 +153,7 @@
 		    				$('#mission_vote_results_list').empty();
 		    				$('#mission_vote_results_list').append($('<li>' + info.round_description + '</li>'));
 		    				$('#mission_vote_results_list').append($('<li>Number of votes for failure = ' + info.mission_fail_votes + '</li>'));
+		    				$('#mission_vote_results_list').listview('refresh');
 		    				mission_vote_results.show();
 		    			}
 		    			break;
@@ -222,9 +229,9 @@
 			th {
 				border-bottom: 1px solid #d6d6d6;
 			}
-			tr:nth-child(even) {
-				background:#e9e9e9;
-			}
+/* 			tr:nth-child(even) { */
+/* 				background:#e9e9e9; */
+/* 			} */
 		</style>
 	</head>
 	
@@ -238,82 +245,90 @@
 
 			<div data-role="main" class="ui-content">
 				<h2>Your Role</h2>
-				<p>{{ role }}</p>
-			
-				<h2>Game Progress</h2>
-				<table>
-					<thead>
-					</thead>
-					<tbody>
-						<tr>
-							<td>Current Round</td> <td id="round"></td>
-						</tr>
-						<tr>
-							<td>Number of Missions Failed</td> <td id="missions_failed"></td>
-						</tr>
-						<tr>
-							<td>Current Leader</td> <td id="leader"></td>
-						</tr>
-							<td>Failed Proposals Remaining, this Round</td> <td id="failed_proposals_remaining"></td>
-						</tr>
-					</tbody>
-				</table>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<h3>{{ role }}</h3>
+				</div>
 				
 				<h2>All Roles in Play</h2>
-				<ul>
+				<ul data-role="listview" data-inset="true">
 					{% for role in all_roles %}
 		  				<li>{{ role }}</li>
 					{% endfor %}
 				</ul>
 				
-				<h2>All Players in Game</h2>
-				<table data-role="table class="ui-responsive ui-shadow">
-					<thead>
-						<tr>
-							<th>Leader Order</th>
-							<th>Player</th>
-							<th>Info</th>
-						</tr>
-					</thead>
-					<tbody>
-						{% for identity in identities %}
-		  					<tr>
-		  						<td>{{ loop.index }}</td>
-		  						<td>{{ identity[0] }}</td>
-		  						<td>{{ identity[1] }}</td>
-		  					</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-				
 				<h2>Team Size by Round</h2>
-				<table>
-					<thead>
-						<tr>
-							<th>Round</th>
-							<th>Team Size</th>
-							<th>Number to Fail</th>
-						</tr>
-					</thead>
-					<tbody id="team_size_by_round">
-						{% for info in round_counts %}
+				<div class="ui-body ui-body-a ui-corner-all">
+					<table>
+						<thead>
 							<tr>
-								<td>{{ loop.index }}</td>
-								<td>{{ info[0] }}</td>
-								<td>{{ info[1] }}</td>
+								<th>Round</th>
+								<th>Team Size</th>
+								<th>Number to Fail</th>
 							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
+						</thead>
+						<tbody id="team_size_by_round">
+							{% for info in round_counts %}
+								<tr>
+									<td>{{ loop.index }}</td>
+									<td>{{ info[0] }}</td>
+									<td>{{ info[1] }}</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				
+				<h2>All Players in Game</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<table data-role="table" class="ui-responsive ui-shadow">
+						<thead>
+							<tr>
+								<th>Leader Order</th>
+								<th>Player</th>
+								<th>Info</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for identity in identities %}
+			  					<tr>
+			  						<td>{{ loop.index }}</td>
+			  						<td>{{ identity[0] }}</td>
+			  						<td>{{ identity[1] }}</td>
+			  					</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			
+				<h2 class="ui-bar ui-bar-a ui-corner-all">Game Progress</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<table>
+						<thead>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Current Round</td> <td id="round"></td>
+							</tr>
+							<tr>
+								<td>Number of Missions Failed</td> <td id="missions_failed"></td>
+							</tr>
+							<tr>
+								<td>Current Leader</td> <td id="leader"></td>
+							</tr>
+								<td>Failed Proposals Remaining, this Round</td> <td id="failed_proposals_remaining"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 				
 				<div id="team_display">
 					<h2>Current Team</h2>
-					<ul id="team_display_list">
+					<ul id="team_display_list" data-role="listview" data-inset="true">
 						<!-- JavaScript will put the results here. -->
 					</ul>
 				</div>
 				
-				<h2 id="status_message"></h2>
+				<h2 id="status_message" class="ui-bar ui-bar-a ui-corner-all"></h2>
 				
 				<div id="create_team_proposal">
 					<form method="post" action="/{{ room_name }}/submit_team_proposal"
@@ -332,9 +347,11 @@
 				</div>
 				
 				<div id="vote_on_team_proposal">
-					<ul id="team_proposal_list">
+					<h3>Proposed Team:</h3>
+					<ul id="team_proposal_list" data-role="listview" data-inset="true">
 						<!-- JavaScript will put the proposed names here. -->
 					</ul>
+					<h3>Your Vote:</h3>
 					<form method="post" action="/{{ room_name }}/vote_on_team_proposal" id="vote_on_team_proposal_form", data-ajax="false">
 						<div class="ui-field-contain">
 						<fieldset data-role="controlgroup">
@@ -350,17 +367,19 @@
 				</div>
 				
 				<div id="team_vote_results">
-					<table>
-						<thead>
-							<tr>
-								<th>Player</th>
-								<th>Vote</th>
-							</tr>
-						</thead>
-						<tbody id="team_vote_results_list">
-							<!-- JavaScript will put the results here. -->
-						</tbody>
-					</table>
+					<div class="ui-body ui-body-a ui-corner-all">
+						<table>
+							<thead>
+								<tr>
+									<th>Player</th>
+									<th>Vote</th>
+								</tr>
+							</thead>
+							<tbody id="team_vote_results_list">
+								<!-- JavaScript will put the results here. -->
+							</tbody>
+						</table>
+					</div>
 					<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results" data-ajax="false">
 						<input type="submit" data-icon="check" data-inline="true" value="Acknowledge">
 					</form>
@@ -382,7 +401,7 @@
 				</div>
 				
 				<div id="mission_vote_results">
-					<ul id="mission_vote_results_list">
+					<ul id="mission_vote_results_list" data-role="listview" data-inset="true">
 						<!-- JavaScript will put the results here. -->
 					</ul>
 					<form method="post" action="/{{ room_name }}/acknowledge_mission_vote_results" data-ajax="false">
