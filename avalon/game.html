@@ -244,82 +244,8 @@
 			 </div>
 
 			<div data-role="main" class="ui-content">
-				<h2>Your Role</h2>
-				<div class="ui-body ui-body-a ui-corner-all">
-					<h3>{{ role }}</h3>
-				</div>
-				
-				<h2>All Roles in Play</h2>
-				<ul data-role="listview" data-inset="true">
-					{% for role in all_roles %}
-		  				<li>{{ role }}</li>
-					{% endfor %}
-				</ul>
-				
-				<h2>Team Size by Round</h2>
-				<div class="ui-body ui-body-a ui-corner-all">
-					<table>
-						<thead>
-							<tr>
-								<th>Round</th>
-								<th>Team Size</th>
-								<th>Number to Fail</th>
-							</tr>
-						</thead>
-						<tbody id="team_size_by_round">
-							{% for info in round_counts %}
-								<tr>
-									<td>{{ loop.index }}</td>
-									<td>{{ info[0] }}</td>
-									<td>{{ info[1] }}</td>
-								</tr>
-							{% endfor %}
-						</tbody>
-					</table>
-				</div>
-				
-				<h2>All Players in Game</h2>
-				<div class="ui-body ui-body-a ui-corner-all">
-					<table data-role="table" class="ui-responsive ui-shadow">
-						<thead>
-							<tr>
-								<th>Leader Order</th>
-								<th>Player</th>
-								<th>Info</th>
-							</tr>
-						</thead>
-						<tbody>
-							{% for identity in identities %}
-			  					<tr>
-			  						<td>{{ loop.index }}</td>
-			  						<td>{{ identity[0] }}</td>
-			  						<td>{{ identity[1] }}</td>
-			  					</tr>
-							{% endfor %}
-						</tbody>
-					</table>
-				</div>
 			
-				<h2 class="ui-bar ui-bar-a ui-corner-all">Game Progress</h2>
-				<div class="ui-body ui-body-a ui-corner-all">
-					<table>
-						<thead>
-						</thead>
-						<tbody>
-							<tr>
-								<td>Current Round</td> <td id="round"></td>
-							</tr>
-							<tr>
-								<td>Number of Missions Failed</td> <td id="missions_failed"></td>
-							</tr>
-							<tr>
-								<td>Current Leader</td> <td id="leader"></td>
-							</tr>
-								<td>Failed Proposals Remaining, this Round</td> <td id="failed_proposals_remaining"></td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
+				<h2 id="status_message" class="ui-bar ui-bar-a ui-corner-all"></h2>
 				
 				<div id="team_display">
 					<h2>Current Team</h2>
@@ -327,8 +253,6 @@
 						<!-- JavaScript will put the results here. -->
 					</ul>
 				</div>
-				
-				<h2 id="status_message" class="ui-bar ui-bar-a ui-corner-all"></h2>
 				
 				<div id="create_team_proposal">
 					<form method="post" action="/{{ room_name }}/submit_team_proposal"
@@ -401,6 +325,7 @@
 				</div>
 				
 				<div id="mission_vote_results">
+					<h3>Mission Results:</h3>
 					<ul id="mission_vote_results_list" data-role="listview" data-inset="true">
 						<!-- JavaScript will put the results here. -->
 					</ul>
@@ -423,6 +348,86 @@
 						<input type="submit" data-icon="check" data-inline="true" value="Attempt Assassination">
 					</form>
 				</div>
+				
+				<h2 class="ui-bar ui-bar-a ui-corner-all">Game Progress</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<table>
+						<thead>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Current Round</td> <td id="round"></td>
+							</tr>
+							<tr>
+								<td>Number of Missions Failed</td> <td id="missions_failed"></td>
+							</tr>
+							<tr>
+								<td>Current Leader</td> <td id="leader"></td>
+							</tr>
+								<td>Failed Proposals Remaining, this Round</td> <td id="failed_proposals_remaining"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				
+				<h2 class="ui-bar ui-bar-a ui-corner-all">Game Info</h2>
+			
+				<h2>Your Role</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<h3>{{ role }}</h3>
+				</div>
+				
+				<h2>All Roles in Play</h2>
+				<ul data-role="listview" data-inset="true">
+					{% for role in all_roles %}
+		  				<li>{{ role }}</li>
+					{% endfor %}
+				</ul>
+				
+				<h2>Team Size by Round</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<table>
+						<thead>
+							<tr>
+								<th>Round</th>
+								<th>Team Size</th>
+								<th>Number to Fail</th>
+							</tr>
+						</thead>
+						<tbody id="team_size_by_round">
+							{% for info in round_counts %}
+								<tr>
+									<td>{{ loop.index }}</td>
+									<td>{{ info[0] }}</td>
+									<td>{{ info[1] }}</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				
+				<h2>All Players in Game</h2>
+				<div class="ui-body ui-body-a ui-corner-all">
+					<table data-role="table" class="ui-responsive ui-shadow">
+						<thead>
+							<tr>
+								<th>Leader Order</th>
+								<th>Player</th>
+								<th>Info</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for identity in identities %}
+			  					<tr>
+			  						<td>{{ loop.index }}</td>
+			  						<td>{{ identity[0] }}</td>
+			  						<td>{{ identity[1] }}</td>
+			  					</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			
 			</div>
 			
 			<div data-role="panel" id="options_panel">
