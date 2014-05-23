@@ -352,42 +352,42 @@
 					</form>
 				</div>
 				
-				<h2 class="ui-bar ui-bar-a ui-corner-all">Game Progress</h2>
+				<h2 class="ui-bar ui-bar-a ui-corner-all">Progress</h2>
 				<div class="ui-body ui-body-a ui-corner-all">
 					<table>
 						<thead>
 						</thead>
 						<tbody>
 							<tr>
-								<td>Current Round</td> <td id="round"></td>
+								<td>Round</td> <td id="round"></td>
 							</tr>
 							<tr>
-								<td>Number of Missions Failed</td> <td id="missions_failed"></td>
+								<td>Missions Failed</td> <td id="missions_failed"></td>
 							</tr>
 							<tr>
-								<td>Current Leader</td> <td id="leader"></td>
+								<td>Leader</td> <td id="leader"></td>
 							</tr>
-								<td>Failed Proposals Remaining, this Round</td> <td id="failed_proposals_remaining"></td>
+								<td>Team Proposals Left</td> <td id="failed_proposals_remaining"></td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
 				
-				<h2 class="ui-bar ui-bar-a ui-corner-all">Game Info</h2>
+				<h2 class="ui-bar ui-bar-a ui-corner-all">Setup Info</h2>
 			
 				<h2>Your Role</h2>
 				<div class="ui-body ui-body-a ui-corner-all">
 					<h3>{{ role }}</h3>
 				</div>
 				
-				<h2>All Roles in Play</h2>
+				<h2>Roles</h2>
 				<ul data-role="listview" data-inset="true">
 					{% for role in all_roles %}
 		  				<li>{{ role }}</li>
 					{% endfor %}
 				</ul>
 				
-				<h2>Team Size by Round</h2>
+				<h2>Rounds</h2>
 				<div class="ui-body ui-body-a ui-corner-all">
 					<table>
 						<thead>
@@ -409,12 +409,12 @@
 					</table>
 				</div>
 				
-				<h2>All Players in Game</h2>
+				<h2>Players</h2>
 				<div class="ui-body ui-body-a ui-corner-all">
 					<table>
 						<thead>
 							<tr>
-								<th>Leader Order</th>
+								<th>Leadership Order</th>
 								<th>Player</th>
 								<th>Info</th>
 							</tr>
