@@ -83,6 +83,16 @@
 			#assignments_display {
 				display: none;
 			}
+			
+			table {
+				border-collapse: collapse;
+			}
+			
+			td, th {
+				text-align: center;
+				padding-left: 0.5em;
+				padding-right: 0.5em;
+			}
 		</style>
     
 	<title>Avalon: {{room_name}} Game</title>
@@ -157,7 +167,7 @@
 					</div>
 				</div>
 				
-				<h2 id="status_message" class="ui-bar ui-bar-a ui-corner-all"></h2>
+				<h2 id="status_message" class="ui-bar ui-bar-a ui-corner-all">Game in Progress</h2>
 				
 				<div id="game_end_form">
 					<form method="post" action="/{{ room_name }}/request_end" data-ajax="false">
