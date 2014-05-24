@@ -477,6 +477,10 @@
 			
 			<div data-role="panel" id="options_panel">
    				<h2>Options</h2>
+   				<form method="get" action="/{{ room_name }}/role_descriptions" data-ajax="false">
+					<input type="submit" data-icon="gear" data-inline="true" value="Role Descriptions">
+				</form>
+   				
 				<form method="post" action="/{{ room_name }}/destroy_game"
 					onsubmit="return confirm('Are you sure you want to destroy the game?')"
 					data-ajax="false">

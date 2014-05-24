@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Role Descriptions</title>
+
+<link rel="stylesheet" href="/static/themes/greenish.min.css" />
+<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+
+</head>
+<body>
+
+	<div data-role="page">
+		
+		<div data-role="header">
+		    <h1>Role Descriptions</h1>
+		 </div>
+	
+		<div data-role="main" class="ui-content">
+		
+			<h1>Good</h1>
+			<dl>
+				<dt>Merlin</dt>
+				<dd>
+				Merlin can see all evil players except Mordred and Oberon.
+				He cannot see specific roles, so, for example, he doesn't know if an evil person is the assassin
+				or just a lowly minion. All he knows is that they are evil.
+				Mordred and Oberon are the two exceptions to Merlin's ability to see evil.
+				To Merlin, Mordred and Oberon are indistinguishable from good roles.
+				</dd>
+				
+				<dt>Percival</dt>
+				<dd>
+				Percival can see Merlin and Morgana, but he cannot tell which is which.
+				</dd>
+				
+				<dt>Loyal</dt>
+				<dd>
+				This role has no knowledge of the roles of other players.
+				</dd>
+			</dl>
+				
+			<h1>Evil</h1>
+			<dl>
+				<dt>Morgana</dt>
+				<dd>
+				Morgana is a normal evil role except that Percival cannot distinguish her from Merlin.
+				She can see that all other evil players (except Oberon) are evil.
+				</dd>
+				
+				<dt>Mordred</dt>
+				<dd>
+				Mordred is a normal evil role except that Merlin cannot tell that he is evil.
+				He can see that all other evil players (except Oberon) are evil.
+				</dd>
+				
+				<dt>Oberon</dt>
+				<dd>
+				Oberon is evil, but he has no information about the other players, and they have no information about him.
+				</dd>
+				
+				<dt>Assassin</dt>
+				<dd>
+				The assassin is a normal evil role until the end of the game.
+				At the end of the game, the assassin gets one guess at who Merlin is.
+				If he is correct in his guess, he assassinates Merlin and the evil team wins the game,
+				regardless of the number of missions failed during the game.
+				If he is incorrect in his guess, the winning team is decided by the number of missions failed during the game.
+				</dd>
+				
+				<dt>Minion</dt>
+				<dd>
+				This role has no knowledge of the roles of other players.
+				</dd>
+			
+			</dl>
+		
+		</div>
+	</div>
+
+</body>
+</html>

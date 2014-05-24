@@ -455,6 +455,13 @@ class RequestEndPage(webapp2.RequestHandler):
             room.game.end_requesters.append(user)
         room.put()
         return self.redirect('/' + room_name)
+
+
+class RoleDescriptionsPage(webapp2.RequestHandler):
+    
+    def get(self, room_name):
+        template = JINJA_ENVIRONMENT.get_template('role_descriptions.html')
+        self.response.write(template.render({}))
         
 
 class ChannelConnectedPage(webapp2.RequestHandler):
@@ -479,6 +486,7 @@ application = webapp2.WSGIApplication([
     (r'/(\w+)/acknowledge_mission_vote_results', AcknowledgeMissionVoteResults),
     (r'/(\w+)/assassin', AssassinPage),
     (r'/(\w+)/request_end', RequestEndPage),
+    (r'/(\w+)/role_descriptions', RoleDescriptionsPage),
     (r'/_ah/channel/connected/', ChannelConnectedPage)
     ],
     debug=True)
