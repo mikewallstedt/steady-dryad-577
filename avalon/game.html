@@ -20,10 +20,13 @@
 		    	var status = $('#status_message');
 		    	var create_team_proposal = $('#create_team_proposal');
 		    	var vote_on_team_proposal = $('#vote_on_team_proposal');
+		    	var team_proposal = $('#team_proposal');
 		    	var vote_on_mission_success = $('#vote_on_mission_success');
 		    	var team_display = $('#team_display');
 		    	var team_vote_results = $('#team_vote_results');
+		    	var team_vote_results_form = $('#team_vote_results_form');
 		    	var mission_vote_results = $('#mission_vote_results');
+		    	var mission_vote_results_form = $('#mission_vote_results_form');
 		    	var assassin_form = $('#assassin_form');
 		    
 		    	function connectToChannel() {
@@ -51,16 +54,28 @@
 		    	
 		    	function populateTeamVoteResults(team_proposal_votes) {
 		    		var team_vote_results_list = $('#team_vote_results_list');
+		    		var ayes = 0;
+		    		var nays = 0;
 		    		team_vote_results_list.empty();
 		    		$.each(team_proposal_votes, function(index, value) {
 		    			var vote = value[1] ? 'Yes' : 'No';
+		    			if (value[1]) {
+		    				ayes += 1;
+		    			} else {
+		    				nays += 1;
+		    			}
 		    			team_vote_results_list.append($('<tr><td>' + value[0] + "</td><td>" + vote + '</td></tr>'));
 		    		});
+		    		if (ayes > nays) {
+		    			$('#team_vote_results_description').text('Accepted ' + ayes + ' votes to ' + nays);
+		    		} else {
+		    			$('#team_vote_results_description').text('Rejected ' + ayes + ' votes to ' + nays);
+		    		}
 		    	}
 		    	
 		    	function updateBasicInfo(info) {
-		    		$('#round').text(info.round_number + 1);
-		    		$('#missions_failed').text(info.failed_mission_count);
+		    		$('#round').text((info.round_number + 1) + ' of ' + {{ round_counts|length }});
+		    		$('#missions_failed').text(info.failed_mission_count + ' of ' + info.round_number);
 		    		$('#leader').text(info.leader);
 		    		$('#failed_proposals_remaining').text(info.proposals_remaining_count);
 		    	}
@@ -68,10 +83,13 @@
 		    	function hideAllDivs() {
 		    		create_team_proposal.hide();
     				vote_on_team_proposal.hide();
+    				team_proposal.hide();
     				vote_on_mission_success.hide();
     				team_vote_results.hide();
+    				team_vote_results_form.hide();
     				team_display.hide();
     				mission_vote_results.hide();
+    				mission_vote_results_form.hide();
     				assassin_form.hide();
 		    	}
 		    	
@@ -110,24 +128,27 @@
 		    			break;
 		    		case 'VOTING_ON_TEAM':
 		    			hideAllDivs();
+		    			populateTeamProposal(info.team);
+		    			team_proposal.show();
 		    			if (info.already_voted_on_team) {
 		    				status.text('Waiting for others to vote on the team');
 		    				vote_on_team_proposal.hide();
 		    			} else {
 		    				status.text('Please vote on the proposed team');
-			    			populateTeamProposal(info.team);
 		    				vote_on_team_proposal.show();
 		    			}
 		    			break;
 		    		case 'TEAM_VOTE_RESULTS':
 		    			hideAllDivs();
+		    			populateTeamProposal(info.team);
+		    			team_proposal.show();
+		    			populateTeamVoteResults(info.team_proposal_votes);
+		    			team_vote_results.show();
 		    			if (info.already_acknowledged_team_vote) {
 		    				status.text('Waiting for other users to acknowledge seeing results');
-		    				team_vote_results.hide();
 		    			} else {
 		    				status.text('Please acknowledge that you have seen these results');
-		    				populateTeamVoteResults(info.team_proposal_votes);
-		    				team_vote_results.show();
+		    				team_vote_results_form.show();
 		    			}
 		    			break;
 		    		case 'MISSION_IN_PROGRESS':
@@ -145,16 +166,16 @@
 		    		case 'MISSION_OVER':
 		    			hideAllDivs();
 		    			displayTeam(info);
+		    			$('#mission_vote_results_list').empty();
+	    				$('#mission_vote_results_list').append($('<li>' + info.round_description + '</li>'));
+	    				$('#mission_vote_results_list').append($('<li>Number of votes for failure = ' + info.mission_fail_votes + '</li>'));
+	    				$('#mission_vote_results_list').listview('refresh');
+	    				mission_vote_results.show();
 		    			if (info.already_acknowledged_mission_vote) {
 		    				status.text('Waiting for other users to acknowledge seeing results');
-		    				mission_vote_results.hide();
 		    			} else {
 		    				status.text('Please acknowledge that you have seen these results');
-		    				$('#mission_vote_results_list').empty();
-		    				$('#mission_vote_results_list').append($('<li>' + info.round_description + '</li>'));
-		    				$('#mission_vote_results_list').append($('<li>Number of votes for failure = ' + info.mission_fail_votes + '</li>'));
-		    				$('#mission_vote_results_list').listview('refresh');
-		    				mission_vote_results.show();
+		    				mission_vote_results_form.show();
 		    			}
 		    			break;
 		    		case 'CLEANUP':
@@ -210,13 +231,22 @@
 			#vote_on_team_proposal {
 				display: none;
 			}
+			#team_proposal {
+				display: none;
+			}
 			#team_vote_results {
+				display: none;
+			}
+			#team_vote_results_form {
 				display: none;
 			}
 			#vote_on_mission_success {
 				display: none;
 			}
 			#mission_vote_results {
+				display: none;
+			}
+			#mission_vote_results_form {
 				display: none;
 			}
 			#assassin_form {
@@ -233,6 +263,11 @@
 			td, th {
 				text-align: center;
 				padding: 0.5em;
+			}
+			#status_message {
+				background: LightGreen;
+				color: black;
+				text-shadow: none;
 			}
 		</style>
 	</head>
@@ -273,11 +308,13 @@
 					</form>
 				</div>
 				
-				<div id="vote_on_team_proposal">
+				<div id="team_proposal">
 					<h3>Proposed Team:</h3>
 					<ul id="team_proposal_list" data-role="listview" data-inset="true">
 						<!-- JavaScript will put the proposed names here. -->
 					</ul>
+				</div>
+				<div id="vote_on_team_proposal">
 					<h3>Your Vote:</h3>
 					<form method="post" action="/{{ room_name }}/vote_on_team_proposal" id="vote_on_team_proposal_form", data-ajax="false">
 						<div class="ui-field-contain">
@@ -294,19 +331,22 @@
 				</div>
 				
 				<div id="team_vote_results">
+					<h3>Votes:</h3>
 					<div class="ui-body ui-body-a ui-corner-all">
 						<table>
 							<thead>
-								<tr>
-									<th>Player</th>
-									<th>Vote</th>
-								</tr>
 							</thead>
 							<tbody id="team_vote_results_list">
 								<!-- JavaScript will put the results here. -->
 							</tbody>
 						</table>
 					</div>
+					<h3>Results:</h3>
+					<div class="ui-body ui-body-a ui-corner-all">
+						<p id="team_vote_results_description">Loading...</p>
+					</div>
+				</div>
+				<div id="team_vote_results_form">
 					<form method="post" action="/{{ room_name }}/acknowledge_team_vote_results" data-ajax="false">
 						<input type="submit" data-icon="check" data-inline="true" value="Acknowledge">
 					</form>
@@ -332,6 +372,8 @@
 					<ul id="mission_vote_results_list" data-role="listview" data-inset="true">
 						<!-- JavaScript will put the results here. -->
 					</ul>
+				</div>
+				<div id="mission_vote_results_form">
 					<form method="post" action="/{{ room_name }}/acknowledge_mission_vote_results" data-ajax="false">
 						<input type="submit" data-icon="check" data-inline="true" value="Acknowledge">
 					</form>
